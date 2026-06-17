@@ -2,7 +2,7 @@
    إعدادات Firebase — ضمانكم
    ============================================================ */
 window.FIREBASE_CONFIG = {
-  apiKey: "AIzaSyC3voTkVrtCRmS0yt2a_SD-m6bNMOgxfyk",
+  apiKey: 
   authDomain: "damankom-64610.firebaseapp.com",
   projectId: "damankom-64610",
   storageBucket: "damankom-64610.firebasestorage.app",
