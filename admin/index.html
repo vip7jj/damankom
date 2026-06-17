@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>ضمانكم — لوحة التحكم</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+<!-- إعدادات Firebase المشتركة (نفس ملف تطبيق المستخدم في المجلد الأعلى) -->
+<script src="../firebase-config.js"></script>
+
+<style>
+  :root{
+    --bg:#f0f4f8;--sidebar:#1A3A5C;--sidebar2:#122B45;--sidebar-text:rgba(255,255,255,.75);
+    --card:#fff;--border:#e2e8f0;--border2:#cbd5e1;
+    --text:#1e293b;--text2:#64748b;--text3:#94a3b8;
+    --blue:#1A3A5C;--blue2:#2E6DA4;--blue3:#E6F1FB;--blue4:#0C447C;
+    --green:#085041;--green2:#1D9E75;--green3:#E1F5EE;--green4:#5DCAA5;
+    --amber:#633806;--amber2:#F59E0B;--amber3:#FEF3C7;
+    --red:#7F1D1D;--red2:#DC2626;--red3:#FEE2E2;--red4:#FCA5A5;
+    --radius:12px;--radius-sm:8px;--shadow:0 1px 3px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);direction:rtl;font-size:14px}
+  button,input,select,textarea{font-family:inherit;font-size:inherit}
+  a{color:var(--blue2)}
+
+  /* ===== LOGIN ===== */
+  .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#1A3A5C,#0C447C)}
+  .auth-card{background:#fff;border-radius:16px;padding:32px 28px;width:100%;max-width:380px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  .auth-logo{width:60px;height:60px;background:var(--green2);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+  .auth-logo i{font-size:30px;color:#fff}
+  .auth-card h2{text-align:center;font-size:19px;color:var(--blue);margin-bottom:4px}
+  .auth-card .sub{text-align:center;font-size:12px;color:var(--text3);margin-bottom:22px}
+  .auth-field{margin-bottom:14px}
+  .auth-field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px}
+  .auth-field input{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:var(--text);transition:.15s;direction:ltr;text-align:left}
+  .auth-field input:focus{outline:none;border-color:var(--blue2)}
+  .auth-btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .auth-btn:hover{background:var(--blue4)}
+  .auth-btn:disabled{opacity:.6;cursor:not-allowed}
+  .auth-msg{font-size:12.5px;padding:10px 12px;border-radius:8px;margin-bottom:14px;display:none}
+  .auth-msg.err{background:var(--red3);color:var(--red);display:block}
+  .auth-msg.info{background:var(--blue3);color:var(--blue4);display:block}
+
+  /* ===== LAYOUT ===== */
+  .app{display:none;min-height:100vh}
+  .app.show{display:flex}
+  .sidebar{width:230px;background:var(--sidebar);color:#fff;display:flex;flex-direction:column;padding:16px 12px;position:sticky;top:0;height:100vh;flex-shrink:0}
+  .sb-head{display:flex;align-items:center;gap:10px;padding:6px 8px 18px}
+  .sb-logo{width:34px;height:34px;background:var(--green2);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .sb-logo i{font-size:20px;color:#fff}
+  .sb-title{font-size:15px;font-weight:700}
+  .sb-title small{display:block;font-size:10px;opacity:.6;font-weight:400}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px;transition:.15s;color:var(--sidebar-text);font-size:13px}
+  .nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+  .nav-item.active{background:rgba(255,255,255,.15);color:#fff;font-weight:500}
+  .nav-item i{font-size:18px;width:20px;flex-shrink:0}
+  .nav-item .badge{background:var(--red2);color:#fff;font-size:10px;padding:1px 7px;border-radius:20px;margin-right:auto}
+  .nav-item.disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+  .nav-item.disabled .soon{margin-right:auto;font-size:9px;background:rgba(255,255,255,.15);padding:1px 6px;border-radius:20px}
+  .nav-sep{font-size:10px;opacity:.4;padding:14px 8px 6px;text-transform:uppercase;letter-spacing:.5px}
+  .sb-foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding-top:10px}
+  .sb-user{display:flex;align-items:center;gap:9px;padding:6px 4px;font-size:12px}
+  .sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--blue2);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+  .sb-logout{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--radius-sm);cursor:pointer;color:var(--sidebar-text);font-size:13px;margin-top:4px}
+  .sb-logout:hover{background:rgba(220,38,38,.2);color:#fff}
+
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;height:58px;display:flex;align-items:center;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
+  .topbar-title{font-size:18px;font-weight:600}
+  .topbar-sub{font-size:12px;color:var(--text3);margin-top:1px}
+  .content{padding:24px;max-width:1000px;width:100%}
+
+  .page{display:none}
+  .page.show{display:block}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);border-top:3px solid var(--blue2)}
+  .stat-card.green{border-top-color:var(--green2)}
+  .stat-card.amber{border-top-color:var(--amber2)}
+  .stat-card .sc-label{font-size:12px;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+  .stat-card .sc-val{font-size:26px;font-weight:700;line-height:1;word-break:break-word}
+
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+  .panel-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .panel-title{font-size:15px;font-weight:600}
+  .panel-sub{font-size:12px;color:var(--text3);margin-top:2px}
+  .panel-body{padding:18px}
+
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--text2);margin-bottom:6px}
+  .field input,.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);transition:.15s}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--blue2)}
+  .field textarea{resize:vertical;min-height:60px}
+  .hint{font-size:11px;color:var(--text3);margin-top:4px}
+
+  .btn{padding:10px 18px;border:none;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:.15s}
+  .btn-primary{background:var(--blue);color:#fff}
+  .btn-primary:hover{background:var(--blue4)}
+  .btn-green{background:var(--green2);color:#fff}
+  .btn-green:hover{background:var(--green)}
+  .btn-ghost{background:var(--bg);color:var(--text);border:1px solid var(--border2)}
+  .btn-ghost:hover{background:#e7edf3}
+  .btn-danger{background:var(--red3);color:var(--red);border:1px solid var(--red4)}
+  .btn-danger:hover{background:#fcd0d0}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .btn-sm{padding:6px 12px;font-size:12px}
+
+  .list-item{display:flex;align-items:flex-start;gap:12px;padding:13px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;background:#fff}
+  .li-icon{width:38px;height:38px;border-radius:9px;background:var(--blue3);color:var(--blue2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+  .li-body{flex:1;min-width:0}
+  .li-title{font-weight:600;font-size:14px;margin-bottom:2px}
+  .li-text{font-size:12.5px;color:var(--text2);word-break:break-word}
+  .li-actions{display:flex;gap:6px;flex-shrink:0}
+
+  .empty{text-align:center;padding:30px 16px;color:var(--text3)}
+  .empty i{font-size:38px;display:block;margin-bottom:10px;opacity:.6}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);color:#fff;padding:12px 22px;border-radius:10px;font-size:13.5px;font-weight:500;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.2);max-width:90%;text-align:center}
+
+  .badge-soft{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600}
+  .badge-soft.green{background:var(--green3);color:var(--green)}
+  .badge-soft.amber{background:var(--amber3);color:var(--amber)}
+
+  .spin{animation:spin 1s linear infinite}
+  @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+  @media(max-width:720px){
+    .sidebar{width:64px;padding:14px 8px}
+    .sb-title,.nav-label,.nav-item .badge,.nav-item .soon,.nav-sep,.sb-user>div:last-child{display:none}
+    .nav-item{justify-content:center}
+    .content{padding:16px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div class="auth-wrap" id="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo"><i class="ti ti-shield-lock"></i></div>
+    <h2>لوحة تحكم ضمانكم</h2>
+    <div class="sub">الدخول مخصّص للمشرف فقط</div>
+    <div class="auth-msg" id="auth-msg"></div>
+    <div class="auth-field">
+      <label>البريد الإلكتروني</label>
+      <input type="email" id="login-email" placeholder="admin@example.com" autocomplete="username">
+    </div>
+    <div class="auth-field">
+      <label>كلمة المرور</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="auth-btn" id="login-btn"><i class="ti ti-login"></i> دخول لوحة التحكم</button>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app" id="app">
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo"><i class="ti ti-shield-check"></i></div>
+      <div class="sb-title">ضمانكم<small>لوحة التحكم</small></div>
+    </div>
+
+    <div class="nav-item active" data-page="dashboard"><i class="ti ti-layout-dashboard"></i><span class="nav-label">لوحة المعلومات</span></div>
+    <div class="nav-item" data-page="ads"><i class="ti ti-speakerphone"></i><span class="nav-label">الإعلانات</span></div>
+    <div class="nav-item" data-page="contact"><i class="ti ti-brand-whatsapp"></i><span class="nav-label">رقم التواصل</span></div>
+    <div class="nav-item" data-page="suggestions"><i class="ti ti-bulb"></i><span class="nav-label">الاقتراحات</span><span class="badge" id="sugg-badge" style="display:none">0</span></div>
+
+    <div class="nav-sep">قريباً (الدفعة التالية)</div>
+    <div class="nav-item disabled"><i class="ti ti-building-store"></i><span class="nav-label">الماركات والوكلاء</span><span class="soon">قريباً</span></div>
+
+    <div class="sb-foot">
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-avatar">A</div>
+        <div style="min-width:0">
+          <div style="font-weight:600">المشرف</div>
+          <div id="sb-email" style="font-size:10px;opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr"></div>
+        </div>
+      </div>
+      <div class="sb-logout" id="logout-btn"><i class="ti ti-logout"></i><span class="nav-label">تسجيل الخروج</span></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="page-title">لوحة المعلومات</div>
+        <div class="topbar-sub" id="page-sub">نظرة عامة على تطبيقك</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page show" id="page-dashboard">
+        <div class="stats">
+          <div class="stat-card green"><div class="sc-label"><i class="ti ti-speakerphone"></i> الإعلانات النشطة</div><div class="sc-val" id="stat-ads">—</div></div>
+          <div class="stat-card"><div class="sc-label"><i class="ti ti-brand-whatsapp"></i> رقم التواصل</div><div class="sc-val" id="stat-contact" style="font-size:18px">—</div></div>
+          <div class="stat-card amber"><div class="sc-label"><i class="ti ti-bulb"></i> اقتراحات معلّقة</div><div class="sc-val" id="stat-sugg">—</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">مرحباً بك في لوحة تحكم ضمانكم</div><div class="panel-sub">كل تعديل هنا يصل مستخدمي التطبيق عند فتحهم له</div></div></div>
+          <div class="panel-body" style="font-size:13.5px;color:var(--text2);line-height:1.9">
+            من هذه اللوحة يمكنك حالياً:
+            <ul style="margin:10px 22px 0">
+              <li>إدارة <strong>الإعلانات</strong> التي تظهر في أعلى التطبيق.</li>
+              <li>تعديل <strong>رقم التواصل (واتساب)</strong> الظاهر للمستخدمين.</li>
+              <li>مراجعة <strong>اقتراحات</strong> المستخدمين (ماركات/منتجات جديدة).</li>
+            </ul>
+            <div style="margin-top:12px;font-size:12px;color:var(--text3)">إدارة الماركات والوكلاء واعتماد الاقتراحات تأتي في الدفعة التالية.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADS -->
+      <div class="page" id="page-ads">
+        <div class="panel">
+          <div class="panel-head">
+            <div><div class="panel-title">إضافة / تعديل إعلان</div><div class="panel-sub">يظهر في شريط الإعلانات أعلى التطبيق</div></div>
+          </div>
+          <div class="panel-body">
+            <div class="field">
+              <label>عنوان الإعلان (سطر صغير)</label>
+              <input type="text" id="ad-label" placeholder="مثال: عرض خاص" maxlength="40">
+            </div>
+            <div class="field">
+              <label>نص الإعلان</label>
+              <textarea id="ad-text" placeholder="مثال: عروض شاكر — خصومات حتى 40% هذا الشهر" maxlength="160"></textarea>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-green" id="ad-save"><i class="ti ti-plus"></i> <span id="ad-save-label">إضافة الإعلان</span></button>
+              <button class="btn btn-ghost" id="ad-cancel" style="display:none"><i class="ti ti-x"></i> إلغاء</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">الإعلانات الحالية</div><div class="panel-sub" id="ads-count">—</div></div></div>
+          <div class="panel-body" id="ads-list"><div class="empty"><i class="ti ti-loader spin"></i>جارٍ التحميل...</div></div>
+        </div>
+      </div>
+
+      <!-- CONTACT -->
+      <div class="page" id="page-contact">
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">رقم التواصل (واتساب)</div><div class="panel-sub">يظهر للمستخدمين في صفحة «تواصل»</div></div></div>
+          <div class="panel-body">
+            <div class="field">
+              <label>الرقم بصيغة دولية (بدون + أو مسافات)</label>
+              <input type="text" id="contact-input" placeholder="9665XXXXXXXX" dir="ltr" style="text-align:left">
+              <div class="hint">مثال للسعودية: يبدأ بـ 966 ثم الرقم بدون الصفر الأول. مثال: 966551234567</div>
+            </div>
+            <button class="btn btn-primary" id="contact-save"><i class="ti ti-device-floppy"></i> حفظ الرقم</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUGGESTIONS -->
+      <div class="page" id="page-suggestions">
+        <div class="panel">
+          <div class="panel-head">
+            <div><div class="panel-title">اقتراحات المستخدمين</div><div class="panel-sub">ماركات/منتجات اقترحها المستخدمون عبر خيار «أخرى»</div></div>
+            <button class="btn btn-ghost btn-sm" id="sugg-refresh"><i class="ti ti-refresh"></i> تحديث</button>
+          </div>
+          <div class="panel-body" id="sugg-list"><div class="empty"><i class="ti ti-loader spin"></i>جارٍ التحميل...</div></div>
+        </div>
+        <div style="font-size:12px;color:var(--text3);padding:0 4px">«الاعتماد» (إضافة الاقتراح للقائمة تلقائياً) يأتي مع إدارة الماركات في الدفعة التالية. حالياً يمكنك مراجعتها وحذف ما لا يلزم.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ Firebase module (admin: email/password) ============ -->
+<script type="module">
+(async function () {
+  const cfg = window.FIREBASE_CONFIG;
+  function ph(c){ return !c || !c.apiKey || /PASTE|YOUR_|XXXX|أدخل/.test(c.apiKey); }
+  if (ph(cfg)) { window.__ADMIN_FB__ = false; window.dispatchEvent(new Event('admin-fb-ready')); return; }
+  const V = "12.15.0";
+  try {
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/" + V + "/firebase-app.js");
+    const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/" + V + "/firebase-auth.js");
+    const { getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc } = await import("https://www.gstatic.com/firebasejs/" + V + "/firebase-firestore.js");
+    const app = initializeApp(cfg);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    window.__ADMIN_FB__ = {
+      __ready: true,
+      onAuth(cb) { onAuthStateChanged(auth, cb); },
+      currentEmail() { return auth.currentUser ? auth.currentUser.email : null; },
+      async signIn(email, pw) { const c = await signInWithEmailAndPassword(auth, email, pw); return c.user; },
+      async signOut() { return signOut(auth); },
+      async getConfig(key, def) { try { const d = await getDoc(doc(db, 'config', key)); return d.exists() ? d.data().value : (def === undefined ? null : def); } catch (e) { return def === undefined ? null : def; } },
+      async setConfig(key, value) { await setDoc(doc(db, 'config', key), { value: value, updatedAt: new Date().toISOString() }); return true; },
+      async listSuggestions() { const s = await getDocs(collection(db, 'suggestions')); const out = []; s.forEach(d => out.push(Object.assign({ id: d.id }, d.data()))); return out; },
+      async deleteSuggestion(id) { await deleteDoc(doc(db, 'suggestions', id)); return true; }
+    };
+    window.dispatchEvent(new Event('admin-fb-ready'));
+  } catch (e) {
+    console.error('Admin Firebase init failed:', e);
+    window.__ADMIN_FB__ = false;
+    window.dispatchEvent(new Event('admin-fb-ready'));
+  }
+})();
+</script>
+
+<!-- ============ Admin UI logic ============ -->
+<script>
+(function () {
+  'use strict';
+  const $ = function (id) { return document.getElementById(id); };
+  let FB = null;
+  let adsCache = [];
+  let editIndex = -1;
+
+  function toast(msg, type) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.style.background = type === 'err' ? '#991B1B' : '#065F46';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 3000);
+  }
+  function authMsg(msg, type) {
+    const m = $('auth-msg');
+    m.className = 'auth-msg ' + (type || 'err');
+    m.textContent = msg;
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  /* ---------- Boot ---------- */
+  function boot() {
+    FB = window.__ADMIN_FB__;
+    if (FB === false || !FB) {
+      authMsg('لم يتم العثور على إعدادات Firebase. تأكّد من رفع ملف firebase-config.js في المجلد الرئيسي.', 'err');
+      $('login-btn').disabled = true;
+      return;
+    }
+    // مراقبة حالة الدخول
+    FB.onAuth(function (user) {
+      if (user) showApp(user);
+      else showLogin();
+    });
+  }
+  if (window.__ADMIN_FB__ !== undefined) boot();
+  else window.addEventListener('admin-fb-ready', boot);
+
+  /* ---------- Auth UI ---------- */
+  function showLogin() {
+    $('app').classList.remove('show');
+    $('auth-wrap').style.display = 'flex';
+  }
+  function showApp(user) {
+    $('auth-wrap').style.display = 'none';
+    $('app').classList.add('show');
+    const email = user.email || '';
+    $('sb-email').textContent = email;
+    $('sb-avatar').textContent = (email[0] || 'A').toUpperCase();
+    loadDashboard();
+  }
+
+  $('login-btn').addEventListener('click', doLogin);
+  $('login-pass').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+  $('login-email').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('login-pass').focus(); });
+
+  async function doLogin() {
+    const email = $('login-email').value.trim();
+    const pw = $('login-pass').value;
+    if (!email || !pw) { authMsg('أدخل البريد وكلمة المرور.', 'err'); return; }
+    const btn = $('login-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader spin"></i> جارٍ الدخول...';
+    try {
+      await FB.signIn(email, pw);
+      // onAuth سيتولّى عرض اللوحة
+    } catch (e) {
+      let msg = 'تعذّر الدخول. تأكّد من البريد وكلمة المرور.';
+      const code = (e && e.code) || '';
+      if (code.indexOf('invalid-email') >= 0) msg = 'صيغة البريد غير صحيحة.';
+      else if (code.indexOf('too-many-requests') >= 0) msg = 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة.';
+      else if (code.indexOf('network') >= 0) msg = 'تعذّر الاتصال بالإنترنت.';
+      authMsg(msg, 'err');
+    } finally {
+      btn.disabled = false; btn.innerHTML = '<i class="ti ti-login"></i> دخول لوحة التحكم';
+    }
+  }
+
+  $('logout-btn').addEventListener('click', async function () {
+    try { await FB.signOut(); } catch (e) {}
+  });
+
+  /* ---------- Navigation ---------- */
+  const TITLES = {
+    dashboard: ['لوحة المعلومات', 'نظرة عامة على تطبيقك'],
+    ads: ['الإعلانات', 'تتحكم في شريط الإعلانات بالتطبيق'],
+    contact: ['رقم التواصل', 'رقم واتساب الظاهر للمستخدمين'],
+    suggestions: ['الاقتراحات', 'مراجعة اقتراحات المستخدمين']
+  };
+  document.querySelectorAll('.nav-item[data-page]').forEach(function (n) {
+    n.addEventListener('click', function () {
+      const page = n.getAttribute('data-page');
+      document.querySelectorAll('.nav-item').forEach(function (x) { x.classList.remove('active'); });
+      n.classList.add('active');
+      document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('show'); });
+      $('page-' + page).classList.add('show');
+      $('page-title').textContent = TITLES[page][0];
+      $('page-sub').textContent = TITLES[page][1];
+      if (page === 'dashboard') loadDashboard();
+      if (page === 'ads') loadAds();
+      if (page === 'contact') loadContact();
+      if (page === 'suggestions') loadSuggestions();
+    });
+  });
+
+  /* ---------- Dashboard ---------- */
+  async function loadDashboard() {
+    try {
+      const ads = await FB.getConfig('ads', []);
+      $('stat-ads').textContent = (ads && ads.length) ? ads.length : 0;
+    } catch (e) { $('stat-ads').textContent = '—'; }
+    try {
+      const wa = await FB.getConfig('contact_wa', '');
+      $('stat-contact').textContent = wa ? wa : 'غير محدّد';
+    } catch (e) { $('stat-contact').textContent = '—'; }
+    try {
+      const s = await FB.listSuggestions();
+      const pending = s.length;
+      $('stat-sugg').textContent = pending;
+      const badge = $('sugg-badge');
+      if (pending > 0) { badge.style.display = 'inline-block'; badge.textContent = pending; }
+      else badge.style.display = 'none';
+    } catch (e) { $('stat-sugg').textContent = '—'; }
+  }
+
+  /* ---------- Ads ---------- */
+  async function loadAds() {
+    const box = $('ads-list');
+    box.innerHTML = '<div class="empty"><i class="ti ti-loader spin"></i>جارٍ التحميل...</div>';
+    try {
+      adsCache = await FB.getConfig('ads', []) || [];
+      if (!Array.isArray(adsCache)) adsCache = [];
+    } catch (e) { adsCache = []; }
+    renderAds();
+  }
+  function renderAds() {
+    const box = $('ads-list');
+    $('ads-count').textContent = adsCache.length + ' إعلان';
+    if (!adsCache.length) {
+      box.innerHTML = '<div class="empty"><i class="ti ti-speakerphone"></i>لا توجد إعلانات بعد — أضِف إعلانك الأول من الأعلى.</div>';
+      return;
+    }
+    box.innerHTML = adsCache.map(function (a, i) {
+      return '<div class="list-item">' +
+        '<div class="li-icon"><i class="ti ti-speakerphone"></i></div>' +
+        '<div class="li-body"><div class="li-title">' + esc(a.label || 'إعلان') + '</div><div class="li-text">' + esc(a.text || '') + '</div></div>' +
+        '<div class="li-actions">' +
+        '<button class="btn btn-ghost btn-sm" data-edit="' + i + '"><i class="ti ti-edit"></i></button>' +
+        '<button class="btn btn-danger btn-sm" data-del="' + i + '"><i class="ti ti-trash"></i></button>' +
+        '</div></div>';
+    }).join('');
+    box.querySelectorAll('[data-edit]').forEach(function (b) { b.addEventListener('click', function () { startEditAd(+b.getAttribute('data-edit')); }); });
+    box.querySelectorAll('[data-del]').forEach(function (b) { b.addEventListener('click', function () { deleteAd(+b.getAttribute('data-del')); }); });
+  }
+  function startEditAd(i) {
+    editIndex = i;
+    $('ad-label').value = adsCache[i].label || '';
+    $('ad-text').value = adsCache[i].text || '';
+    $('ad-save-label').textContent = 'حفظ التعديل';
+    $('ad-cancel').style.display = 'inline-flex';
+    window.scrollTo(0, 0);
+  }
+  function resetAdForm() {
+    editIndex = -1;
+    $('ad-label').value = '';
+    $('ad-text').value = '';
+    $('ad-save-label').textContent = 'إضافة الإعلان';
+    $('ad-cancel').style.display = 'none';
+  }
+  $('ad-cancel').addEventListener('click', resetAdForm);
+  $('ad-save').addEventListener('click', async function () {
+    const label = $('ad-label').value.trim();
+    const text = $('ad-text').value.trim();
+    if (!text) { toast('اكتب نص الإعلان', 'err'); return; }
+    const item = { label: label || 'إعلان', text: text };
+    const next = adsCache.slice();
+    if (editIndex >= 0) next[editIndex] = item; else next.push(item);
+    const btn = $('ad-save'); btn.disabled = true;
+    try {
+      await FB.setConfig('ads', next);
+      adsCache = next;
+      toast(editIndex >= 0 ? 'تم حفظ التعديل' : 'تمت إضافة الإعلان');
+      resetAdForm();
+      renderAds();
+      loadDashboard();
+    } catch (e) {
+      toast('تعذّر الحفظ — تأكّد من صلاحية الأدمن والاتصال', 'err');
+    } finally { btn.disabled = false; }
+  });
+  async function deleteAd(i) {
+    if (!confirm('حذف هذا الإعلان؟')) return;
+    const next = adsCache.slice(); next.splice(i, 1);
+    try {
+      await FB.setConfig('ads', next);
+      adsCache = next;
+      toast('تم حذف الإعلان');
+      renderAds(); loadDashboard();
+    } catch (e) { toast('تعذّر الحذف', 'err'); }
+  }
+
+  /* ---------- Contact ---------- */
+  async function loadContact() {
+    try {
+      const wa = await FB.getConfig('contact_wa', '');
+      $('contact-input').value = wa || '';
+    } catch (e) { $('contact-input').value = ''; }
+  }
+  $('contact-save').addEventListener('click', async function () {
+    let v = $('contact-input').value.replace(/\D/g, '');
+    if (v.length < 8) { toast('أدخل رقماً صحيحاً بصيغة دولية', 'err'); return; }
+    const btn = $('contact-save'); btn.disabled = true;
+    try {
+      await FB.setConfig('contact_wa', v);
+      $('contact-input').value = v;
+      toast('تم حفظ رقم التواصل');
+      loadDashboard();
+    } catch (e) {
+      toast('تعذّر الحفظ — تأكّد من صلاحية الأدمن', 'err');
+    } finally { btn.disabled = false; }
+  });
+
+  /* ---------- Suggestions ---------- */
+  async function loadSuggestions() {
+    const box = $('sugg-list');
+    box.innerHTML = '<div class="empty"><i class="ti ti-loader spin"></i>جارٍ التحميل...</div>';
+    let list = [];
+    try { list = await FB.listSuggestions(); } catch (e) { box.innerHTML = '<div class="empty"><i class="ti ti-alert-triangle"></i>تعذّر تحميل الاقتراحات.</div>'; return; }
+    // الأحدث أولاً
+    list.sort(function (a, b) { return String(b.at || '').localeCompare(String(a.at || '')); });
+    if (!list.length) {
+      box.innerHTML = '<div class="empty"><i class="ti ti-bulb"></i>لا توجد اقتراحات حالياً.</div>';
+      return;
+    }
+    const typeLabel = function (t) { return t === 'brand' ? 'ماركة جديدة' : t === 'product_type' ? 'نوع منتج جديد' : (t || 'اقتراح'); };
+    box.innerHTML = list.map(function (s) {
+      let date = '';
+      try { date = s.at ? new Date(s.at).toLocaleDateString('ar-SA') : ''; } catch (e) {}
+      return '<div class="list-item">' +
+        '<div class="li-icon" style="background:var(--amber3);color:var(--amber)"><i class="ti ti-bulb"></i></div>' +
+        '<div class="li-body"><div class="li-title">' + esc(s.value || '') + '</div>' +
+        '<div class="li-text"><span class="badge-soft amber">' + esc(typeLabel(s.type)) + '</span>' + (date ? ' · ' + esc(date) : '') + '</div></div>' +
+        '<div class="li-actions"><button class="btn btn-danger btn-sm" data-sugg="' + esc(s.id) + '"><i class="ti ti-trash"></i> تجاهل</button></div>' +
+        '</div>';
+    }).join('');
+    box.querySelectorAll('[data-sugg]').forEach(function (b) {
+      b.addEventListener('click', function () { dismissSugg(b.getAttribute('data-sugg')); });
+    });
+  }
+  async function dismissSugg(id) {
+    if (!confirm('تجاهل هذا الاقتراح وحذفه؟')) return;
+    try {
+      await FB.deleteSuggestion(id);
+      toast('تم تجاهل الاقتراح');
+      loadSuggestions(); loadDashboard();
+    } catch (e) { toast('تعذّر الحذف', 'err'); }
+  }
+  $('sugg-refresh').addEventListener('click', loadSuggestions);
+
+})();
+</script>
+</body>
+</html>
