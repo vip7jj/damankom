@@ -1,5 +1,11 @@
 rules_version = '2';
 
+// ============================================================
+// ضمانكم — قواعد أمان Firestore (النسخة الصحيحة الكاملة)
+// انسخ كامل هذا المحتوى والصقه في:
+// Firebase Console ← Firestore Database ← تبويب Rules ← Publish
+// ============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -8,13 +14,15 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // الإعدادات العامة (إعلانات، رقم تواصل): الجميع يقرأ، الأدمن فقط يكتب
+    // الإعدادات العامة (الإعلانات، رقم التواصل، الماركات، مراكز الصيانة، أنواع المنتجات):
+    // الجميع يقرأ (حتى الزائر المجهول)، والأدمن فقط يكتب/يعدّل
     match /config/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // اقتراحات المستخدمين: أي مستخدم مسجّل ينشئ اقتراحاً، والأدمن فقط يقرؤها ويديرها
+    // اقتراحات المستخدمين (ماركات/منتجات جديدة):
+    // أي مستخدم مسجّل (ولو مجهولاً) ينشئ اقتراحاً، والأدمن فقط يقرؤها ويديرها
     match /suggestions/{docId} {
       allow create: if request.auth != null;
       allow read, update, delete: if isAdmin();
