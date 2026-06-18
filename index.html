@@ -1691,8 +1691,14 @@ const MAINT_CENTERS = {
     if (!brandRaw) { toast('اختر الماركة أولاً', 'err'); return; }
     if (brandRaw === 'أخرى' && !otherBrand) { toast('اكتب اسم الماركة في حقل «أخرى»', 'err'); return; }
     if (!val('p-date')) { toast('اختر تاريخ الشراء', 'err'); return; }
-    const phone = val('c-phone').trim();
-    if (phone && !/^0?5\d{8}$/.test(phone.replace(/\s|-/g, ''))) { toast('رقم الجوال غير صحيح (مثال: 05xxxxxxxx)', 'err'); return; }
+    const phoneRaw = val('c-phone').trim();
+    if (phoneRaw) {
+      let digits = phoneRaw.replace(/[^\d]/g, '');           // أبقِ الأرقام فقط (يتجاهل + ومسافات وشرطات وأقواس)
+      if (digits.indexOf('00966') === 0) digits = digits.slice(5);   // أزِل رمز الدولة 00966
+      else if (digits.indexOf('966') === 0) digits = digits.slice(3); // أو 966
+      // اقبل أي رقم معقول (٨–١٥ خانة) — سعودي أو دولي — وارفض فقط ما هو قصير/غير صالح بوضوح
+      if (!/^\d{8,15}$/.test(digits)) { toast('رقم الجوال غير صحيح — أدخل رقماً صحيحاً أو اتركه فارغاً', 'err'); return; }
+    }
 
     // اقتراحات «أخرى» تُحفظ للأدمن
     if (typeRaw === 'أخرى' && otherProd) await Store.addSuggestion('product_type', otherProd);
@@ -2063,18 +2069,23 @@ const MAINT_CENTERS = {
   ];
   function buildCarousel() {
     const slides = $('ad-slides'), dots = $('ad-dots'); if (!slides) return;
-    slides.innerHTML = ADS.map(function (a) {
+    // تجاهل أي إعلان فارغ (بلا نص) حتى لا تظهر مساحات فارغة في الشريط
+    const list = (ADS || []).filter(function (a) { return a && String(a.text || '').trim().length > 0; });
+    const wrap = $('ad-carousel');
+    if (!list.length) { if (wrap) wrap.style.display = 'none'; if (AD_TIMER) { clearInterval(AD_TIMER); AD_TIMER = null; } return; }
+    if (wrap) wrap.style.display = '';
+    slides.innerHTML = list.map(function (a) {
       return '<div class="ad-banner" style="min-width:100%;flex-shrink:0;border-radius:8px"><i class="ti ti-speakerphone" aria-hidden="true"></i><div><div class="ad-label">' + esc(a.label) + '</div><div class="ad-text">' + esc(a.text) + '</div></div></div>';
     }).join('');
     AD_IDX = 0; slides.style.transform = 'translateX(0)';
     if (dots) {
-      if (ADS.length > 1) {
+      if (list.length > 1) {
         dots.style.display = 'block';
-        dots.innerHTML = ADS.map(function (_, i) { return '<span data-i="' + i + '" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + (i === 0 ? 'var(--blue2)' : 'var(--border2)') + ';margin:0 3px;cursor:pointer"></span>'; }).join('');
+        dots.innerHTML = list.map(function (_, i) { return '<span data-i="' + i + '" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + (i === 0 ? 'var(--blue2)' : 'var(--border2)') + ';margin:0 3px;cursor:pointer"></span>'; }).join('');
         dots.onclick = function (e) { const s = e.target.closest('[data-i]'); if (s) goAd(+s.getAttribute('data-i')); };
         if (AD_TIMER) clearInterval(AD_TIMER);
-        AD_TIMER = setInterval(function () { goAd((AD_IDX + 1) % ADS.length); }, 5000);
-      } else { dots.style.display = 'none'; }
+        AD_TIMER = setInterval(function () { goAd((AD_IDX + 1) % list.length); }, 5000);
+      } else { dots.style.display = 'none'; if (AD_TIMER) { clearInterval(AD_TIMER); AD_TIMER = null; } }
     }
   }
   function goAd(i) {
@@ -2126,8 +2137,11 @@ const MAINT_CENTERS = {
   async function init() {
     // رقم تواصل قابل للتعديل لاحقاً من الأدمن
     try { const wa = await Store.getSetting('contact_wa', ''); if (wa && $('contact-wa')) $('contact-wa').href = 'https://wa.me/' + String(wa).replace(/\D/g, ''); } catch (e) {}
-    // إعلانات من الإعدادات إن وُجدت (تُملأ من الأدمن لاحقاً)
-    try { const ads = await Store.getSetting('ads', null); if (ads && ads.length) ADS = ads; } catch (e) {}
+    // إعلانات من الإعدادات إن وُجدت (تُملأ من الأدمن) — مع تجاهل أي إعلان فارغ
+    try {
+      const ads = await Store.getSetting('ads', null);
+      if (Array.isArray(ads)) { ADS = ads.filter(function (a) { return a && String(a.text || '').trim().length > 0; }); }
+    } catch (e) {}
     // الماركات والوكلاء ومراكز الصيانة التي يديرها الأدمن (تُدمج مع الافتراضية)
     try { const b = await Store.getSetting('brands', {}); if (b && typeof b === 'object') App.adminBrands = b; } catch (e) {}
     try { const mc = await Store.getSetting('maint_centers', {}); if (mc && typeof mc === 'object') App.adminMaint = mc; } catch (e) {}
