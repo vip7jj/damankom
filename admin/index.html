@@ -169,6 +169,7 @@
     <div class="nav-item" data-page="contact"><i class="ti ti-brand-whatsapp"></i><span class="nav-label">رقم التواصل</span></div>
     <div class="nav-item" data-page="suggestions"><i class="ti ti-bulb"></i><span class="nav-label">الاقتراحات</span><span class="badge" id="sugg-badge" style="display:none">0</span></div>
 
+    <div class="nav-item" data-page="types"><i class="ti ti-category"></i><span class="nav-label">أنواع المنتجات</span></div>
     <div class="nav-item" data-page="brands"><i class="ti ti-building-store"></i><span class="nav-label">الماركات والوكلاء</span></div>
     <div class="nav-item" data-page="maint"><i class="ti ti-map-pin"></i><span class="nav-label">مراكز الصيانة</span></div>
 
@@ -267,6 +268,35 @@
           <div class="panel-body" id="sugg-list"><div class="empty"><i class="ti ti-loader spin"></i>جارٍ التحميل...</div></div>
         </div>
         <div style="font-size:12px;color:var(--text3);padding:0 4px">عند اعتماد اقتراح ماركة، سيُفتح نموذج إضافة الماركة مُعبّأً باسمها لتكمل بياناتها.</div>
+      </div>
+
+      <!-- PRODUCT TYPES -->
+      <div class="page" id="page-types">
+        <div class="panel">
+          <div class="panel-head">
+            <div><div class="panel-title">أنواع المنتجات (الفئات)</div><div class="panel-sub">الفئات التي تظهر للمستخدم في قائمة «نوع المنتج»</div></div>
+            <button class="btn btn-green btn-sm" id="type-add-new"><i class="ti ti-plus"></i> نوع جديد</button>
+          </div>
+          <div class="panel-body" id="types-list"><div class="empty"><i class="ti ti-loader spin"></i>جارٍ التحميل...</div></div>
+        </div>
+        <div class="panel" id="type-form-panel" style="display:none">
+          <div class="panel-head"><div><div class="panel-title" id="type-form-title">إضافة نوع</div><div class="panel-sub">اكتب اسم النوع واختر أيقونة مناسبة</div></div></div>
+          <div class="panel-body">
+            <div class="field"><label>اسم النوع <span style="color:var(--red2)">*</span></label><input type="text" id="tf-name" placeholder="مثال: منقّي هواء"></div>
+            <div class="field">
+              <label>الأيقونة</label>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <div id="tf-icon-preview" style="width:46px;height:46px;border-radius:10px;background:var(--blue3);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:24px"><i class="ti ti-package"></i></div>
+                <div class="hint" style="margin:0">اضغط أيقونة من الأسفل لاختيارها</div>
+              </div>
+              <div id="tf-icons" style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <button class="btn btn-green" id="tf-save"><i class="ti ti-device-floppy"></i> حفظ</button>
+              <button class="btn btn-ghost" id="tf-cancel"><i class="ti ti-x"></i> إلغاء</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- BRANDS & AGENTS -->
@@ -595,7 +625,8 @@ const MAINT_CENTERS = {
     contact: ['رقم التواصل', 'رقم واتساب الظاهر للمستخدمين'],
     suggestions: ['الاقتراحات', 'مراجعة اقتراحات المستخدمين'],
     brands: ['الماركات والوكلاء', 'إضافة وتعديل الماركات وبيانات وكلائها'],
-    maint: ['مراكز الصيانة', 'عناوين مراكز الصيانة حسب المدينة']
+    maint: ['مراكز الصيانة', 'عناوين مراكز الصيانة حسب المدينة'],
+    types: ['أنواع المنتجات', 'إضافة وتعديل وحذف فئات المنتجات']
   };
   document.querySelectorAll('.nav-item[data-page]').forEach(function (n) {
     n.addEventListener('click', function () {
@@ -612,6 +643,7 @@ const MAINT_CENTERS = {
       if (page === 'suggestions') loadSuggestions();
       if (page === 'brands') loadBrands();
       if (page === 'maint') loadMaint();
+      if (page === 'types') loadTypes();
     });
   });
 
@@ -747,8 +779,9 @@ const MAINT_CENTERS = {
     box.innerHTML = list.map(function (s) {
       let date = '';
       try { date = s.at ? new Date(s.at).toLocaleDateString('ar-SA') : ''; } catch (e) {}
-      const approveBtn = (s.type === 'brand')
-        ? '<button class="btn btn-green btn-sm" data-approve-id="' + esc(s.id) + '" data-approve-val="' + esc(s.value || '') + '"><i class="ti ti-check"></i> اعتماد</button>'
+      const canApprove = (s.type === 'brand' || s.type === 'product_type');
+      const approveBtn = canApprove
+        ? '<button class="btn btn-green btn-sm" data-approve-id="' + esc(s.id) + '" data-approve-type="' + esc(s.type) + '" data-approve-val="' + esc(s.value || '') + '"><i class="ti ti-check"></i> اعتماد</button>'
         : '';
       return '<div class="list-item">' +
         '<div class="li-icon" style="background:var(--amber3);color:var(--amber)"><i class="ti ti-bulb"></i></div>' +
@@ -761,7 +794,11 @@ const MAINT_CENTERS = {
       b.addEventListener('click', function () { dismissSugg(b.getAttribute('data-sugg')); });
     });
     box.querySelectorAll('[data-approve-id]').forEach(function (b) {
-      b.addEventListener('click', function () { approveBrandSuggestion(b.getAttribute('data-approve-id'), b.getAttribute('data-approve-val')); });
+      b.addEventListener('click', function () {
+        const t = b.getAttribute('data-approve-type');
+        if (t === 'product_type') approveTypeSuggestion(b.getAttribute('data-approve-id'), b.getAttribute('data-approve-val'));
+        else approveBrandSuggestion(b.getAttribute('data-approve-id'), b.getAttribute('data-approve-val'));
+      });
     });
   }
   async function dismissSugg(id) {
@@ -776,6 +813,7 @@ const MAINT_CENTERS = {
 
   /* ---------- Brands & Agents ---------- */
   const CATEGORIES = ['ثلاجة', 'غسالة', 'مكيف', 'شاشة تلفزيون', 'بوتجاز / فرن', 'جوال / تابلت', 'حاسوب / لاب توب', 'سيارة', 'أخرى'];
+  let catNames = CATEGORIES.slice();
   let adminBrandsCache = {};
   let adminMaintCache = {};
   let editingBrandName = null;
@@ -788,12 +826,20 @@ const MAINT_CENTERS = {
     return '';
   }
   function ensureCatSelects() {
+    let list = (catNames && catNames.length) ? catNames.slice() : CATEGORIES.slice();
+    if (list.indexOf('أخرى') < 0) list.push('أخرى'); // أخرى متاحة دائماً للماركات
     const f = $('brand-cat-filter'), bf = $('bf-cat');
-    if (f && !f.options.length) CATEGORIES.forEach(function (c) { const o = document.createElement('option'); o.value = c; o.textContent = c; f.appendChild(o); });
-    if (bf && !bf.options.length) CATEGORIES.forEach(function (c) { const o = document.createElement('option'); o.value = c; o.textContent = c; bf.appendChild(o); });
+    [f, bf].forEach(function (sel) {
+      if (!sel) return;
+      const cur = sel.value;
+      sel.innerHTML = '';
+      list.forEach(function (c) { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+      if (cur && list.indexOf(cur) >= 0) sel.value = cur;
+    });
   }
 
   async function loadBrands() {
+    try { const cats = await FB.getConfig('categories', null); if (Array.isArray(cats) && cats.length) catNames = cats.map(function (c) { return (c && c.name) ? c.name : String(c); }); } catch (e) {}
     ensureCatSelects();
     try { adminBrandsCache = await FB.getConfig('brands', {}) || {}; } catch (e) { adminBrandsCache = {}; }
     if (typeof adminBrandsCache !== 'object' || adminBrandsCache === null) adminBrandsCache = {};
@@ -979,6 +1025,127 @@ const MAINT_CENTERS = {
     if (nav) nav.click();
     await loadBrands();
     openNewBrand(val || '', id);
+  }
+
+  /* ---------- Product Types (categories) ---------- */
+  // يجب أن تطابق الفئات الافتراضية وأيقوناتها ما في تطبيق المستخدم تماماً
+  const DEFAULT_TYPES_SEED = [
+    { name: 'ثلاجة', icon: 'ti-fridge' },
+    { name: 'غسالة', icon: 'ti-wash-machine' },
+    { name: 'مكيف', icon: 'ti-air-conditioning' },
+    { name: 'شاشة تلفزيون', icon: 'ti-device-tv' },
+    { name: 'بوتجاز / فرن', icon: 'ti-flame' },
+    { name: 'جوال / تابلت', icon: 'ti-device-mobile' },
+    { name: 'حاسوب / لاب توب', icon: 'ti-device-laptop' },
+    { name: 'سيارة', icon: 'ti-car' }
+  ];
+  const DEFAULT_TYPE_NAMES = DEFAULT_TYPES_SEED.map(function (t) { return t.name; });
+  const ICON_CHOICES = ['ti-fridge', 'ti-wash-machine', 'ti-air-conditioning', 'ti-device-tv', 'ti-flame', 'ti-device-mobile', 'ti-device-laptop', 'ti-car', 'ti-wind', 'ti-microwave', 'ti-coffee', 'ti-device-watch', 'ti-headphones', 'ti-camera', 'ti-printer', 'ti-bulb', 'ti-plug', 'ti-battery', 'ti-speakerphone', 'ti-device-tablet', 'ti-fan', 'ti-droplet', 'ti-engine', 'ti-tools', 'ti-device-desktop', 'ti-keyboard', 'ti-motorbike', 'ti-package'];
+  let typesCache = [];
+  let editingTypeIndex = -1;
+  let selectedIcon = 'ti-package';
+  let pendingApproveTypeId = null;
+
+  async function loadTypes() {
+    const box = $('types-list');
+    box.innerHTML = '<div class="empty"><i class="ti ti-loader spin"></i>جارٍ التحميل...</div>';
+    let cats = null;
+    try { cats = await FB.getConfig('categories', null); } catch (e) { cats = null; }
+    if (!Array.isArray(cats) || !cats.length) {
+      // أول مرة: ابذُر القائمة بالفئات الافتراضية لتصبح قابلة للتعديل والحذف
+      typesCache = DEFAULT_TYPES_SEED.map(function (t) { return { name: t.name, icon: t.icon }; });
+      try { await FB.setConfig('categories', typesCache); } catch (e) {}
+    } else {
+      typesCache = cats.map(function (t) { return { name: (t && t.name) ? t.name : String(t), icon: (t && t.icon) ? t.icon : 'ti-package' }; });
+    }
+    renderTypesList();
+  }
+  function renderTypesList() {
+    const box = $('types-list');
+    if (!typesCache.length) { box.innerHTML = '<div class="empty"><i class="ti ti-category"></i>لا توجد أنواع. أضِف نوعاً جديداً.</div>'; return; }
+    box.innerHTML = typesCache.map(function (t, i) {
+      const isDefault = DEFAULT_TYPE_NAMES.indexOf(t.name) >= 0;
+      const badge = isDefault ? '<span class="badge-soft" style="background:var(--bg);color:var(--text2)">افتراضي</span>' : '<span class="badge-soft green">مُضاف</span>';
+      return '<div class="list-item">' +
+        '<div class="li-icon"><i class="ti ' + esc(t.icon || 'ti-package') + '"></i></div>' +
+        '<div class="li-body"><div class="li-title">' + esc(t.name) + ' ' + badge + '</div><div class="li-text">' + esc(t.icon || 'ti-package') + '</div></div>' +
+        '<div class="li-actions">' +
+        '<button class="btn btn-ghost btn-sm" data-tedit="' + i + '"><i class="ti ti-edit"></i> تعديل</button>' +
+        '<button class="btn btn-danger btn-sm" data-tdel="' + i + '"><i class="ti ti-trash"></i> حذف</button>' +
+        '</div></div>';
+    }).join('');
+    box.querySelectorAll('[data-tedit]').forEach(function (b) { b.addEventListener('click', function () { startEditType(+b.getAttribute('data-tedit')); }); });
+    box.querySelectorAll('[data-tdel]').forEach(function (b) { b.addEventListener('click', function () { deleteType(+b.getAttribute('data-tdel')); }); });
+  }
+  function renderIconPicker() {
+    const grid = $('tf-icons'); if (!grid) return;
+    grid.innerHTML = ICON_CHOICES.map(function (ic) {
+      const on = (ic === selectedIcon);
+      return '<div data-ic="' + ic + '" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:20px;border:1.5px solid ' + (on ? 'var(--blue2)' : 'var(--border)') + ';border-radius:8px;cursor:pointer;background:' + (on ? 'var(--blue3)' : '#fff') + ';color:' + (on ? 'var(--blue)' : 'var(--text2)') + '"><i class="ti ' + ic + '"></i></div>';
+    }).join('');
+    grid.querySelectorAll('[data-ic]').forEach(function (el) {
+      el.addEventListener('click', function () { selectedIcon = el.getAttribute('data-ic'); updateIconPreview(); renderIconPicker(); });
+    });
+  }
+  function updateIconPreview() { const p = $('tf-icon-preview'); if (p) p.innerHTML = '<i class="ti ' + selectedIcon + '"></i>'; }
+  function startEditType(i) {
+    editingTypeIndex = i; pendingApproveTypeId = null;
+    const t = typesCache[i] || {};
+    $('tf-name').value = t.name || '';
+    selectedIcon = t.icon || 'ti-package';
+    updateIconPreview(); renderIconPicker();
+    $('type-form-title').textContent = 'تعديل: ' + (t.name || '');
+    $('type-form-panel').style.display = 'block';
+    $('type-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function openNewType(prefillName, approveId) {
+    editingTypeIndex = -1; pendingApproveTypeId = approveId || null;
+    $('tf-name').value = prefillName || '';
+    selectedIcon = 'ti-package';
+    updateIconPreview(); renderIconPicker();
+    $('type-form-title').textContent = prefillName ? ('اعتماد نوع: ' + prefillName) : 'إضافة نوع جديد';
+    $('type-form-panel').style.display = 'block';
+    $('type-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('type-add-new').addEventListener('click', function () { openNewType('', null); });
+  $('tf-cancel').addEventListener('click', function () { $('type-form-panel').style.display = 'none'; editingTypeIndex = -1; pendingApproveTypeId = null; });
+  $('tf-save').addEventListener('click', async function () {
+    const name = $('tf-name').value.trim();
+    if (!name) { toast('اكتب اسم النوع', 'err'); return; }
+    // امنع التكرار (إلا إن كنا نعدّل نفس العنصر)
+    const dup = typesCache.findIndex(function (t, idx) { return t.name === name && idx !== editingTypeIndex; });
+    if (dup >= 0) { toast('هذا النوع موجود مسبقاً', 'err'); return; }
+    const obj = { name: name, icon: selectedIcon || 'ti-package' };
+    const next = typesCache.slice();
+    if (editingTypeIndex >= 0) next[editingTypeIndex] = obj; else next.push(obj);
+    const btn = $('tf-save'); btn.disabled = true;
+    try {
+      await FB.setConfig('categories', next);
+      typesCache = next;
+      if (pendingApproveTypeId) { try { await FB.deleteSuggestion(pendingApproveTypeId); } catch (e) {} pendingApproveTypeId = null; }
+      toast('تم حفظ النوع');
+      $('type-form-panel').style.display = 'none';
+      editingTypeIndex = -1;
+      renderTypesList();
+    } catch (e) { toast('تعذّر الحفظ — تأكّد من صلاحية الأدمن', 'err'); }
+    finally { btn.disabled = false; }
+  });
+  async function deleteType(i) {
+    const t = typesCache[i]; if (!t) return;
+    if (!confirm('حذف النوع «' + t.name + '»؟\nلن يؤثر على الضمانات المحفوظة، لكنه يختفي من قائمة الإضافة. (ماركات هذا النوع تبقى محفوظة لكن قد لا تظهر).')) return;
+    const next = typesCache.slice(); next.splice(i, 1);
+    try {
+      await FB.setConfig('categories', next);
+      typesCache = next;
+      toast('تم حذف النوع');
+      renderTypesList();
+    } catch (e) { toast('تعذّر الحذف', 'err'); }
+  }
+  async function approveTypeSuggestion(id, val) {
+    const nav = document.querySelector('.nav-item[data-page="types"]');
+    if (nav) nav.click();
+    await loadTypes();
+    openNewType(val || '', id);
   }
 
 })();
