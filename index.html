@@ -1403,7 +1403,7 @@ const MAINT_CENTERS = {
   /* ========================================================
      2) STATE & HELPERS
      ======================================================== */
-  const App = { editingId: null, draftPhotos: { inv: '', card: '', maint: '', hull: '' } };
+  const App = { editingId: null, draftPhotos: { inv: '', card: '', maint: '', hull: '' }, adminBrands: {}, adminMaint: {} };
   const $ = function (id) { return document.getElementById(id); };
   const val = function (id) { const e = $(id); return e ? (e.value || '') : ''; };
 
@@ -1457,8 +1457,11 @@ const MAINT_CENTERS = {
     const otherProd = $('other-product-row');
     if (otherProd) otherProd.style.display = (type === 'أخرى') ? 'block' : 'none';
     if (!brandEl) return;
-    const list = (typeof BRANDS_BY_CAT !== 'undefined' && BRANDS_BY_CAT[type]) ? BRANDS_BY_CAT[type]
+    const list = (typeof BRANDS_BY_CAT !== 'undefined' && BRANDS_BY_CAT[type]) ? BRANDS_BY_CAT[type].slice()
       : ['Samsung سامسونج', 'LG إل جي', 'Sony سوني', 'Philips فيليبس'];
+    // أضف الماركات التي أضافها الأدمن لهذه الفئة (من السحابة)
+    const _ab = App.adminBrands || {};
+    Object.keys(_ab).forEach(function (name) { if (_ab[name] && _ab[name].cat === type && list.indexOf(name) < 0) list.push(name); });
     brandEl.innerHTML = '<option value="">— اختر الماركة —</option>';
     list.forEach(function (b) { const o = document.createElement('option'); o.value = b; o.textContent = b; brandEl.appendChild(o); });
     const o = document.createElement('option'); o.value = 'أخرى'; o.textContent = 'أخرى (غير مدرجة)'; brandEl.appendChild(o);
@@ -1472,7 +1475,9 @@ const MAINT_CENTERS = {
     const isOther = (brand === 'أخرى');
     const ob = $('other-brand-row'); if (ob) ob.style.display = isOther ? 'block' : 'none';
     const empty = $('agent-empty'), data = $('agent-data'), card = $('agent-card');
-    const agent = (!isOther && typeof AGENTS !== 'undefined' && AGENTS[brand]) ? AGENTS[brand]
+    const _ab = App.adminBrands || {};
+    const agent = (!isOther && _ab[brand]) ? _ab[brand]
+      : (!isOther && typeof AGENTS !== 'undefined' && AGENTS[brand]) ? AGENTS[brand]
       : (!isOther && typeof CAR_AGENTS !== 'undefined' && CAR_AGENTS[brand]) ? CAR_AGENTS[brand] : null;
     if (!agent) {
       if (empty) { empty.style.display = 'block'; if (isOther) empty.querySelector('p').textContent = 'سيُراجع فريقنا الماركة الجديدة ويضيفها للقائمة'; else empty.querySelector('p').textContent = 'اختر الماركة لتظهر بيانات الوكيل تلقائياً'; }
@@ -1692,7 +1697,8 @@ const MAINT_CENTERS = {
   function warrantyPrintHTML(w) {
     function row(l, v) { if (v == null || v === '' || v === 'undefined') return ''; return '<div class="p-row"><span>' + esc(l) + '</span><span>' + esc(v) + '</span></div>'; }
     const mapLink = (w.store_lat && w.store_lng) ? '<div class="p-row"><span>موقع المعرض</span><span><a href="https://maps.google.com/?q=' + esc(w.store_lat) + ',' + esc(w.store_lng) + '">فتح على الخريطة</a></span></div>' : '';
-    const agent = (typeof AGENTS !== 'undefined' && AGENTS[w.brand]) ? AGENTS[w.brand] : (typeof CAR_AGENTS !== 'undefined' && CAR_AGENTS[w.brand]) ? CAR_AGENTS[w.brand] : null;
+    const _abp = App.adminBrands || {};
+    const agent = _abp[w.brand] ? _abp[w.brand] : (typeof AGENTS !== 'undefined' && AGENTS[w.brand]) ? AGENTS[w.brand] : (typeof CAR_AGENTS !== 'undefined' && CAR_AGENTS[w.brand]) ? CAR_AGENTS[w.brand] : null;
     let agentBlock = '';
     if (agent) agentBlock = '<div class="p-section">بيانات الوكيل</div>' + row('الوكيل', agent.n) + row('هاتف الوكيل', agent.p) + row('رقم الصيانة', agent.m) + row('ساعات العمل', agent.h);
     const photos = (w.photo_inv || w.photo_card) ? '<div class="p-section">المستندات المرفقة</div><div class="p-photos">' + (w.photo_inv ? '<div><img src="' + w.photo_inv + '"><p>صورة الفاتورة</p></div>' : '') + (w.photo_card ? '<div><img src="' + w.photo_card + '"><p>كرت الضمان</p></div>' : '') + '</div>' : '';
@@ -1875,7 +1881,7 @@ const MAINT_CENTERS = {
   }
   window.toggleMaint = toggleMaint;
 
-  function setMaintCity(sel) { const c = sel.value; if ($('m-center')) $('m-center').value = (typeof MAINT_CENTERS !== 'undefined' && MAINT_CENTERS[c]) ? MAINT_CENTERS[c] : ' - تواصل مع مركز الصيانة المعتمد في مدينتك -'; }
+  function setMaintCity(sel) { const c = sel.value; const _am = App.adminMaint || {}; const v = _am[c] || ((typeof MAINT_CENTERS !== 'undefined' && MAINT_CENTERS[c]) ? MAINT_CENTERS[c] : ''); if ($('m-center')) $('m-center').value = v || ' - تواصل مع مركز الصيانة المعتمد في مدينتك -'; }
   window.setMaintCity = setMaintCity;
 
   function startMaintCountdowns() {
@@ -2102,6 +2108,9 @@ const MAINT_CENTERS = {
     try { const wa = await Store.getSetting('contact_wa', ''); if (wa && $('contact-wa')) $('contact-wa').href = 'https://wa.me/' + String(wa).replace(/\D/g, ''); } catch (e) {}
     // إعلانات من الإعدادات إن وُجدت (تُملأ من الأدمن لاحقاً)
     try { const ads = await Store.getSetting('ads', null); if (ads && ads.length) ADS = ads; } catch (e) {}
+    // الماركات والوكلاء ومراكز الصيانة التي يديرها الأدمن (تُدمج مع الافتراضية)
+    try { const b = await Store.getSetting('brands', {}); if (b && typeof b === 'object') App.adminBrands = b; } catch (e) {}
+    try { const mc = await Store.getSetting('maint_centers', {}); if (mc && typeof mc === 'object') App.adminMaint = mc; } catch (e) {}
 
     if ($('p-date')) $('p-date').value = fmtISO(todayMid());
     filterBrandsByType();
