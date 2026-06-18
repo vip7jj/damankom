@@ -207,8 +207,8 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--
 /* Ad banner */
 .ad-banner{background:var(--blue3);border:1px solid #85B7EB;border-radius:var(--radius-sm);padding:11px 13px;margin:8px 0;display:flex;align-items:center;gap:10px}
 .ad-banner i{font-size:22px;color:var(--blue2);flex-shrink:0}
-/* شرائح شريط الإعلانات: حجم ثابت موثوق لكل شريحة (يفصل قياس الشريحة عن تنسيق الإعلان) */
-.ad-slide{flex:0 0 100%;max-width:100%;box-sizing:border-box}
+/* شرائح شريط الإعلانات: عرض إعلان واحد في كل مرة (بسيط وموثوق، بلا flex/transform) */
+.ad-slide{box-sizing:border-box}
 .ad-slide .ad-banner{margin:0;width:100%}
 .ad-label{font-size:10px;color:var(--blue4);font-weight:600}
 .ad-text{font-size:12px;color:#1E3A8A}
@@ -2072,15 +2072,18 @@ const MAINT_CENTERS = {
   ];
   function buildCarousel() {
     const slides = $('ad-slides'), dots = $('ad-dots'); if (!slides) return;
-    // تجاهل أي إعلان فارغ (بلا نص) حتى لا تظهر مساحات فارغة في الشريط
+    // تجاهل أي إعلان فارغ (بلا نص)
     const list = (ADS || []).filter(function (a) { return a && String(a.text || '').trim().length > 0; });
     const wrap = $('ad-carousel');
     if (!list.length) { if (wrap) wrap.style.display = 'none'; if (AD_TIMER) { clearInterval(AD_TIMER); AD_TIMER = null; } return; }
     if (wrap) wrap.style.display = '';
-    slides.innerHTML = list.map(function (a) {
-      return '<div class="ad-slide"><div class="ad-banner"><i class="ti ti-speakerphone" aria-hidden="true"></i><div style="min-width:0"><div class="ad-label">' + esc(a.label) + '</div><div class="ad-text">' + esc(a.text) + '</div></div></div></div>';
+    // عرض بسيط وموثوق: إعلان واحد ظاهر في كل مرة (بلا flex ولا transform)
+    slides.style.display = 'block';
+    slides.style.transform = 'none';
+    slides.innerHTML = list.map(function (a, idx) {
+      return '<div class="ad-slide" style="display:' + (idx === 0 ? 'block' : 'none') + '"><div class="ad-banner"><i class="ti ti-speakerphone" aria-hidden="true"></i><div style="min-width:0"><div class="ad-label">' + esc(a.label) + '</div><div class="ad-text">' + esc(a.text) + '</div></div></div></div>';
     }).join('');
-    AD_IDX = 0; slides.style.transform = 'translateX(0)';
+    AD_IDX = 0;
     if (dots) {
       if (list.length > 1) {
         dots.style.display = 'block';
@@ -2092,7 +2095,10 @@ const MAINT_CENTERS = {
     }
   }
   function goAd(i) {
-    AD_IDX = i; const slides = $('ad-slides'); if (slides) slides.style.transform = 'translateX(' + (i * -100) + '%)';
+    AD_IDX = i;
+    const slides = $('ad-slides'); if (!slides) return;
+    const items = slides.querySelectorAll('.ad-slide');
+    Array.prototype.forEach.call(items, function (el, j) { el.style.display = (j === i) ? 'block' : 'none'; });
     const dots = $('ad-dots'); if (dots) Array.prototype.forEach.call(dots.children, function (d, j) { d.style.background = (j === i) ? 'var(--blue2)' : 'var(--border2)'; });
   }
   window.goAd = goAd;
