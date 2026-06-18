@@ -685,9 +685,11 @@ const MAINT_CENTERS = {
       return;
     }
     box.innerHTML = adsCache.map(function (a, i) {
+      const isEmpty = !String(a.text || '').trim();
+      const textHtml = isEmpty ? '<span style="color:var(--red2)">⚠ إعلان فارغ — يُنصح بحذفه</span>' : esc(a.text || '');
       return '<div class="list-item">' +
         '<div class="li-icon"><i class="ti ti-speakerphone"></i></div>' +
-        '<div class="li-body"><div class="li-title">' + esc(a.label || 'إعلان') + '</div><div class="li-text">' + esc(a.text || '') + '</div></div>' +
+        '<div class="li-body"><div class="li-title">' + esc(a.label || 'إعلان') + '</div><div class="li-text">' + textHtml + '</div></div>' +
         '<div class="li-actions">' +
         '<button class="btn btn-ghost btn-sm" data-edit="' + i + '"><i class="ti ti-edit"></i></button>' +
         '<button class="btn btn-danger btn-sm" data-del="' + i + '"><i class="ti ti-trash"></i></button>' +
