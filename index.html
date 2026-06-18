@@ -1403,7 +1403,7 @@ const MAINT_CENTERS = {
   /* ========================================================
      2) STATE & HELPERS
      ======================================================== */
-  const App = { editingId: null, draftPhotos: { inv: '', card: '', maint: '', hull: '' }, adminBrands: {}, adminMaint: {} };
+  const App = { editingId: null, draftPhotos: { inv: '', card: '', maint: '', hull: '' }, adminBrands: {}, adminMaint: {}, adminTypes: [] };
   const $ = function (id) { return document.getElementById(id); };
   const val = function (id) { const e = $(id); return e ? (e.value || '') : ''; };
 
@@ -1412,7 +1412,13 @@ const MAINT_CENTERS = {
     'شاشة تلفزيون': 'ti-device-tv', 'بوتجاز / فرن': 'ti-flame', 'جوال / تابلت': 'ti-device-mobile',
     'حاسوب / لاب توب': 'ti-device-laptop', 'سيارة': 'ti-car'
   };
-  function iconFor(t) { return PRODUCT_ICONS[t] || 'ti-package'; }
+  // الفئات الافتراضية (تُستخدم إن لم يضبط الأدمن قائمة في السحابة)
+  const DEFAULT_TYPES = ['ثلاجة', 'غسالة', 'مكيف', 'شاشة تلفزيون', 'بوتجاز / فرن', 'جوال / تابلت', 'حاسوب / لاب توب', 'سيارة'];
+  function iconFor(t) {
+    const at = App.adminTypes || [];
+    for (let i = 0; i < at.length; i++) { if (at[i] && at[i].name === t && at[i].icon) return at[i].icon; }
+    return PRODUCT_ICONS[t] || 'ti-package';
+  }
 
   // تواريخ بدون توقيت (تفادي فرق يوم بسبب المنطقة الزمنية)
   function todayMid() { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
@@ -1451,14 +1457,28 @@ const MAINT_CENTERS = {
   /* ========================================================
      4) ADD — brands by type, agent autofill, warranty box
      ======================================================== */
+  // يبني قائمة «نوع المنتج» من فئات الأدمن (السحابة) أو الافتراضية، مع «أخرى» دائماً في النهاية
+  function populateTypes() {
+    const sel = $('p-type'); if (!sel) return;
+    const cur = sel.value;
+    const at = App.adminTypes || [];
+    let names = [];
+    if (at.length) at.forEach(function (t) { const nm = (t && t.name) ? t.name : (typeof t === 'string' ? t : ''); if (nm && names.indexOf(nm) < 0) names.push(nm); });
+    else names = DEFAULT_TYPES.slice();
+    sel.innerHTML = '';
+    names.forEach(function (nm) { const o = document.createElement('option'); o.value = nm; o.textContent = nm; sel.appendChild(o); });
+    const o = document.createElement('option'); o.value = 'أخرى'; o.textContent = 'أخرى'; sel.appendChild(o);
+    if (cur && names.indexOf(cur) >= 0) sel.value = cur;
+  }
+  window.populateTypes = populateTypes;
+
   function filterBrandsByType() {
     const type = val('p-type');
     const brandEl = $('p-brand');
     const otherProd = $('other-product-row');
     if (otherProd) otherProd.style.display = (type === 'أخرى') ? 'block' : 'none';
     if (!brandEl) return;
-    const list = (typeof BRANDS_BY_CAT !== 'undefined' && BRANDS_BY_CAT[type]) ? BRANDS_BY_CAT[type].slice()
-      : ['Samsung سامسونج', 'LG إل جي', 'Sony سوني', 'Philips فيليبس'];
+    const list = (typeof BRANDS_BY_CAT !== 'undefined' && BRANDS_BY_CAT[type]) ? BRANDS_BY_CAT[type].slice() : [];
     // أضف الماركات التي أضافها الأدمن لهذه الفئة (من السحابة)
     const _ab = App.adminBrands || {};
     Object.keys(_ab).forEach(function (name) { if (_ab[name] && _ab[name].cat === type && list.indexOf(name) < 0) list.push(name); });
@@ -2111,8 +2131,11 @@ const MAINT_CENTERS = {
     // الماركات والوكلاء ومراكز الصيانة التي يديرها الأدمن (تُدمج مع الافتراضية)
     try { const b = await Store.getSetting('brands', {}); if (b && typeof b === 'object') App.adminBrands = b; } catch (e) {}
     try { const mc = await Store.getSetting('maint_centers', {}); if (mc && typeof mc === 'object') App.adminMaint = mc; } catch (e) {}
+    // أنواع المنتجات (الفئات) التي يديرها الأدمن — تُستبدل بالافتراضية إن وُجدت
+    try { const ct = await Store.getSetting('categories', []); if (Array.isArray(ct) && ct.length) App.adminTypes = ct; } catch (e) {}
 
     if ($('p-date')) $('p-date').value = fmtISO(todayMid());
+    populateTypes();
     filterBrandsByType();
     calcWarranty();
     buildCarousel();
