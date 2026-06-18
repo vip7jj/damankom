@@ -169,8 +169,8 @@
     <div class="nav-item" data-page="contact"><i class="ti ti-brand-whatsapp"></i><span class="nav-label">رقم التواصل</span></div>
     <div class="nav-item" data-page="suggestions"><i class="ti ti-bulb"></i><span class="nav-label">الاقتراحات</span><span class="badge" id="sugg-badge" style="display:none">0</span></div>
 
-    <div class="nav-sep">قريباً (الدفعة التالية)</div>
-    <div class="nav-item disabled"><i class="ti ti-building-store"></i><span class="nav-label">الماركات والوكلاء</span><span class="soon">قريباً</span></div>
+    <div class="nav-item" data-page="brands"><i class="ti ti-building-store"></i><span class="nav-label">الماركات والوكلاء</span></div>
+    <div class="nav-item" data-page="maint"><i class="ti ti-map-pin"></i><span class="nav-label">مراكز الصيانة</span></div>
 
     <div class="sb-foot">
       <div class="sb-user">
@@ -266,12 +266,209 @@
           </div>
           <div class="panel-body" id="sugg-list"><div class="empty"><i class="ti ti-loader spin"></i>جارٍ التحميل...</div></div>
         </div>
-        <div style="font-size:12px;color:var(--text3);padding:0 4px">«الاعتماد» (إضافة الاقتراح للقائمة تلقائياً) يأتي مع إدارة الماركات في الدفعة التالية. حالياً يمكنك مراجعتها وحذف ما لا يلزم.</div>
+        <div style="font-size:12px;color:var(--text3);padding:0 4px">عند اعتماد اقتراح ماركة، سيُفتح نموذج إضافة الماركة مُعبّأً باسمها لتكمل بياناتها.</div>
+      </div>
+
+      <!-- BRANDS & AGENTS -->
+      <div class="page" id="page-brands">
+        <div class="panel">
+          <div class="panel-head">
+            <div><div class="panel-title">الماركات والوكلاء</div><div class="panel-sub">أضِف ماركة جديدة أو عدّل بيانات وكيل موجود</div></div>
+            <button class="btn btn-green btn-sm" id="brand-add-new"><i class="ti ti-plus"></i> ماركة جديدة</button>
+          </div>
+          <div class="panel-body">
+            <div class="field" style="margin-bottom:8px">
+              <label>عرض ماركات الفئة</label>
+              <select id="brand-cat-filter"></select>
+            </div>
+            <div id="brands-list"><div class="empty"><i class="ti ti-loader spin"></i>جارٍ التحميل...</div></div>
+          </div>
+        </div>
+
+        <!-- Brand form -->
+        <div class="panel" id="brand-form-panel" style="display:none">
+          <div class="panel-head"><div><div class="panel-title" id="brand-form-title">إضافة ماركة</div><div class="panel-sub">اكتب اسم الماركة تماماً كما تريده أن يظهر للمستخدم</div></div></div>
+          <div class="panel-body">
+            <div class="field"><label>الفئة <span style="color:var(--red2)">*</span></label><select id="bf-cat"></select></div>
+            <div class="field"><label>اسم الماركة (كما يظهر للمستخدم) <span style="color:var(--red2)">*</span></label><input type="text" id="bf-name" placeholder="مثال: Hisense هايسنس"><div class="hint">يُفضّل الاسم بالإنجليزية + العربية كما في القائمة، مثل: LG إل جي</div></div>
+            <div class="field"><label>اسم الوكيل / الموزّع <span style="color:var(--red2)">*</span></label><input type="text" id="bf-n" placeholder="مثال: مجموعة شاكر للأجهزة الكهربائية"></div>
+            <div class="field"><label>الماركات التي يمثّلها الوكيل (نص للعرض)</label><input type="text" id="bf-brands" placeholder="مثال: LG • Midea • Beko"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field"><label>رقم الهاتف</label><input type="text" id="bf-p" dir="ltr" placeholder="8001234567"></div>
+              <div class="field"><label>رقم الصيانة</label><input type="text" id="bf-m" placeholder="رقم الصيانة: 8001234567"></div>
+            </div>
+            <div class="field"><label>ساعات العمل</label><input type="text" id="bf-h" placeholder="الأحد - الخميس | 8:00 ص - 5:00 م"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field"><label>البريد الإلكتروني</label><input type="text" id="bf-e" dir="ltr" placeholder="support@example.com"></div>
+              <div class="field"><label>الموقع الإلكتروني</label><input type="text" id="bf-w" dir="ltr" placeholder="example.com"></div>
+            </div>
+            <div class="field"><label>العنوان</label><input type="text" id="bf-a" placeholder="جدة - شارع التحلية | الرياض | الدمام"></div>
+            <div class="field"><label>رابط الصيانة (اختياري)</label><input type="text" id="bf-ml" dir="ltr" placeholder="https://example.com/maintenance"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field"><label>خط العرض lat (اختياري)</label><input type="text" id="bf-lat" dir="ltr" placeholder="24.7136"></div>
+              <div class="field"><label>خط الطول lng (اختياري)</label><input type="text" id="bf-lng" dir="ltr" placeholder="46.6753"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <button class="btn btn-green" id="bf-save"><i class="ti ti-device-floppy"></i> حفظ</button>
+              <button class="btn btn-ghost" id="bf-cancel"><i class="ti ti-x"></i> إلغاء</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAINTENANCE CENTERS -->
+      <div class="page" id="page-maint">
+        <div class="panel">
+          <div class="panel-head">
+            <div><div class="panel-title">مراكز الصيانة حسب المدينة</div><div class="panel-sub">العنوان الذي يظهر للمستخدم عند اختيار مدينته في صفحة الصيانة</div></div>
+            <button class="btn btn-green btn-sm" id="maint-add-new"><i class="ti ti-plus"></i> مدينة جديدة</button>
+          </div>
+          <div class="panel-body" id="maint-list"><div class="empty"><i class="ti ti-loader spin"></i>جارٍ التحميل...</div></div>
+        </div>
+        <div class="panel" id="maint-form-panel" style="display:none">
+          <div class="panel-head"><div><div class="panel-title" id="maint-form-title">إضافة مدينة</div></div></div>
+          <div class="panel-body">
+            <div class="field"><label>المدينة <span style="color:var(--red2)">*</span></label><input type="text" id="mf-city" placeholder="مثال: حفر الباطن"></div>
+            <div class="field"><label>عنوان مركز الصيانة <span style="color:var(--red2)">*</span></label><input type="text" id="mf-addr" placeholder="مثال: شارع الملك فهد - مركز الصيانة المعتمد"></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-green" id="mf-save"><i class="ti ti-device-floppy"></i> حفظ</button>
+              <button class="btn btn-ghost" id="mf-cancel"><i class="ti ti-x"></i> إلغاء</button>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
   </div>
 </div>
+
+<!-- ============ Catalog data (defaults: brands/agents/maint) ============ -->
+<script>
+const AGENTS = {
+  "LG إل جي":        {n:"مجموعة شاكر للأجهزة الكهربائية",brands:"LG • Midea • Ariston • Beko • Indesit • Panasonic",p:"8002445454",m:"رقم الصيانة: 8002445454",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"support@shakersa.com",w:"shakersa.com",a:"جدة  -  شارع التحلية | الرياض | الدمام",lat:21.5433,lng:39.1728,ml:"https://shakersa.com/maintenance"},
+  "Midea ميديا":     {n:"مجموعة شاكر للأجهزة الكهربائية",brands:"LG • Midea • Ariston • Beko",p:"8002445454",m:"رقم الصيانة: 8002445454",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"support@shakersa.com",w:"shakersa.com",a:"جدة  -  شارع التحلية | الرياض | الدمام",lat:21.5433,lng:39.1728,ml:""},
+  "Ariston أريستون": {n:"مجموعة شاكر للأجهزة الكهربائية",brands:"Ariston • Bompani • Indesit • Hotpoint",p:"8002445454",m:"رقم الصيانة: 8002445454",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"support@shakersa.com",w:"shakersa.com",a:"جدة  -  شارع التحلية | الرياض | الدمام",lat:21.5433,lng:39.1728,ml:""},
+  "Bompani بومباني": {n:"مجموعة شاكر للأجهزة الكهربائية",brands:"Bompani • Ariston • Indesit",p:"8002445454",m:"رقم الصيانة: 8002445454",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"support@shakersa.com",w:"shakersa.com",a:"جدة + الرياض + الدمام",lat:21.5433,lng:39.1728,ml:""},
+  "Indesit انديست":  {n:"مجموعة شاكر للأجهزة الكهربائية",brands:"Indesit • Ariston • Hotpoint",p:"8002445454",m:"رقم الصيانة: 8002445454",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"support@shakersa.com",w:"shakersa.com",a:"جدة + الرياض + الدمام",lat:21.5433,lng:39.1728,ml:""},
+  "Beko بيكو":       {n:"مجموعة شاكر للأجهزة الكهربائية",brands:"Beko • LG • Midea",p:"8002445454",m:"رقم الصيانة: 8002445454",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"support@shakersa.com",w:"shakersa.com",a:"جدة + الرياض + الدمام",lat:21.5433,lng:39.1728,ml:""},
+  "Samsung سامسونج": {n:"سامسونج إلكترونيكس المشرق العربي",brands:"Samsung Galaxy • Samsung TVs • Samsung Home",p:"920023700",m:"رقم الصيانة: 920023700",h:"الأحد - الخميس | 8:00 ص - 10:00 م",e:"عبر samsung.com/sa",w:"samsung.com/sa",a:"الرياض (المقر الإقليمي) + جدة + الدمام",lat:24.7136,lng:46.6753,ml:"https://samsung.com/sa/support"},
+  "Haier هاير":      {n:"شركة هاير السعودية (فرع مباشر)",brands:"Haier • GEA • Candy • Fisher Parker",p:"8001222201",m:"رقم الصيانة: 8001222201",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"service@haier.com.sa",w:"haier.com/sa",a:"الرياض + جدة + الدمام",lat:24.7136,lng:46.6753,ml:"https://haier.com/sa/service"},
+  "Candy كاندي":     {n:"شركة حمد عبدالله العيسى",brands:"Hitachi • Gibson • Candy • Kraft • HAS",p:"920015511",m:"رقم الصيانة: 8001240020",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:" - ",w:" - ",a:"المملكة العربية السعودية",lat:24.7136,lng:46.6753,ml:""},
+  "Toshiba توشيبا":  {n:"شركة عبد اللطيف جميل للإلكترونيات",brands:"Toshiba • Sharp • Bosch • Electrolux • Westinghouse",p:"920005468",m:"رقم الصيانة: 920005468",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"support@redsea.com",w:"alje.com",a:"جدة (المقر الرئيسي) + فروع",lat:21.5254,lng:39.1694,ml:""},
+  "Sharp شارب":      {n:"شركة عبد اللطيف جميل للإلكترونيات",brands:"Sharp • Toshiba • Bosch • Electrolux",p:"920005468",m:"رقم الصيانة: 920005468",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"support@redsea.com",w:"alje.com",a:"جدة (المقر الرئيسي) + فروع",lat:21.5254,lng:39.1694,ml:""},
+  "Bosch بوش":       {n:"شركة عبد اللطيف جميل للإلكترونيات",brands:"Bosch • Toshiba • Sharp • Electrolux",p:"8001279999",m:"رقم الصيانة: 8001279999",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"support@redsea.com",w:"alje.com",a:"جدة (المقر الرئيسي) + فروع",lat:21.5254,lng:39.1694,ml:""},
+  "Electrolux إلكترولكس":{n:"شركة عبد اللطيف جميل للإلكترونيات",brands:"Electrolux • Bosch • Sharp • Toshiba",p:"8001279999",m:"رقم الصيانة: 8001279999",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"support@redsea.com",w:"alje.com",a:"جدة + الرياض + الدمام",lat:21.5254,lng:39.1694,ml:""},
+  "Whirlpool ويرلبول":{n:"شركة الزقزوق للأجهزة المنزلية",brands:"Whirlpool • Hisense • Glem Gas • O-General • Cool Line",p:"920004111",m:"رقم الصيانة: 8001000717",h:"الأحد - الخميس | 9:00 ص - 5:00 م",e:"info@zagzoog.com",w:"zagzoog.com",a:"جدة (المقر) + 20 فرعاً + 95 معرضاً",lat:21.5234,lng:39.1590,ml:""},
+  "Hisense هايسنس":  {n:"شركة الزقزوق / المتبولي المتحدة",brands:"Hisense • Whirlpool • Cool Line",p:"920004111",m:"رقم الصيانة: 8001000717",h:"الأحد - الخميس | 9:00 ص - 5:00 م",e:"info@zagzoog.com",w:"zagzoog.com",a:"جدة + الرياض + الدمام",lat:21.5234,lng:39.1590,ml:""},
+  "Glem Gas جليم غاز":{n:"شركة الزقزوق للأجهزة المنزلية",brands:"Glem Gas • Whirlpool • Cool Line • Zetrust",p:"920004111",m:"رقم الصيانة: 8001000717",h:"الأحد - الخميس | 9:00 ص - 5:00 م",e:"info@zagzoog.com",w:"zagzoog.com",a:"جدة (المقر) + 20 فرعاً",lat:21.5234,lng:39.1590,ml:""},
+  "Hitachi هيتاشي":  {n:"شركة حمد عبدالله العيسى",brands:"Hitachi • Gibson • Candy • Kraft",p:"920015511",m:"رقم الصيانة: 8001240020",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:" - ",w:" - ",a:"المملكة العربية السعودية",lat:24.7136,lng:46.6753,ml:""},
+  "Gree جري":        {n:"الشركة الأساسية (Basic)",brands:"Gree • Fuji • Fisher • Sanyo • Basic",p:"920010666",m:"رقم الصيانة: 920010666",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:" - ",w:" - ",a:"جدة + الرياض",lat:21.4858,lng:39.1925,ml:""},
+  "Carrier كارير":   {n:"شركة إبراهيم الجفالي وإخوانه",brands:"Carrier • Kelvinator • Frigidaire • Falcon • Comfy",p:"8001160077",m:"رقم الصيانة: 8001160077",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"عبر juffali.com",w:"juffali.com",a:"جدة (المقر الرئيسي)",lat:21.5012,lng:39.1711,ml:""},
+  "York يورك":       {n:"شركة آل سالم لتكييف الهواء",brands:"York • Johnson Controls",p:"920003588",m:"رقم الصيانة: 920003588",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:" - ",w:"shop.york.com.sa",a:"المملكة العربية السعودية",lat:24.7136,lng:46.6753,ml:""},
+  "Daikin دايكن":    {n:"شركة دايكن السعودية (فرع مباشر)",brands:"Daikin • VRV/VRF",p:"8001110909",m:"رقم الصيانة: 8001110909",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"عبر daikin-ksa.com",w:"daikin-ksa.com",a:"الرياض + جدة + الدمام",lat:24.7136,lng:46.6753,ml:"https://daikin-ksa.com/service"},
+  "Frigidaire فريجيدير":{n:"شركة إبراهيم الجفالي وإخوانه",brands:"Frigidaire • Kelvinator • Carrier • Falcon",p:"8001160077",m:"رقم الصيانة: 8001160077",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"عبر juffali.com",w:"juffali.com",a:"جدة (المقر الرئيسي)",lat:21.5012,lng:39.1711,ml:""},
+  "Sony سوني":       {n:"الشركة الإلكترونية الحديثة (الفيصلية)",brands:"Sony BRAVIA • Sony PlayStation • Sony كاميرات",p:"عبر sonyworld.sa",m:"رقم الصيانة: عبر sonyworld.sa",h:"الأحد - الخميس | 9:00 ص - 6:00 م",e:"عبر sonyworld.sa",w:"sonyworld.sa",a:"الرياض + جدة + الدمام",lat:24.7136,lng:46.6753,ml:"https://sonyworld.sa/support"},
+  "TCL تي سي ال":    {n:"شركة محمد عمر العيسائي للإلكترونيات",brands:"TCL • LG • Hoover • Vestel • Galanz • Dreame",p:"8002440305",m:"رقم الصيانة: 8002440305",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"عبر aecksa.com",w:"aecksa.com",a:"جدة + الرياض + الدمام",lat:21.5433,lng:39.1728,ml:""},
+  "Panasonic باناسونيك":{n:"مجموعة شاكر للأجهزة الكهربائية",brands:"Panasonic • LG • Midea",p:"8002445454",m:"رقم الصيانة: 8002445454",h:"الأحد - الخميس | 8:00 ص - 5:00 م",e:"support@shakersa.com",w:"shakersa.com",a:"جدة + الرياض + الدمام",lat:21.5433,lng:39.1728,ml:""},
+  "Huawei هواوي":    {n:"هواوي السعودية (فرع مباشر)",brands:"Huawei Mate/P/Nova • MatePad • MateBook • Honor",p:"عبر consumer.huawei.com/sa",m:"رقم الصيانة: عبر consumer.huawei.com/sa",h:"الأحد - الخميس | 9:00 ص - 9:00 م",e:"عبر consumer.huawei.com/sa",w:"consumer.huawei.com/sa",a:"الرياض (واجهة روشن) + جدة + الدمام",lat:24.7136,lng:46.6753,ml:""},
+  "Apple أبل":       {n:"شركة حاسبات العرب (Arab Computers)  -  موزع Apple الرسمي",brands:"iPhone • iPad • Mac • Apple Watch • AirPods",p:"920033789",m:"رقم الصيانة: 920033789",h:"الأحد - الخميس | 9:00 ص - 6:00 م",e:"عبر arabcomputers.com.sa",w:"arabcomputers.com.sa",a:"الرياض (مكة رود) + جدة (مركز الخياط)",lat:24.6936,lng:46.7219,ml:""},
+  "Xiaomi شاومي":    {n:"شاومي السعودية (فرع مباشر) + مشاعل العاصمة",brands:"Xiaomi • Redmi • POCO • Xiaomi Pad",p:"عبر mi.com/sa",m:"رقم الصيانة: عبر mi.com/sa",h:"الأحد - الخميس | 10:00 ص - 10:00 م",e:"عبر mi.com/sa",w:"mi.com/sa",a:"الرياض + جدة + الدمام",lat:24.7136,lng:46.6753,ml:""},
+  "OPPO أوبو":       {n:"أوبو السعودية (فرع مباشر)",brands:"OPPO Reno/Find/A • OnePlus • Realme • OPPO Pad",p:"عبر oppo.com/sa",m:"رقم الصيانة: عبر support.oppo.com/sa",h:"الأحد - الخميس | 9:00 ص - 9:00 م",e:"عبر oppo.com/sa",w:"oppo.com/sa",a:"الرياض + جدة + الدمام",lat:24.7136,lng:46.6753,ml:""},
+};
+
+const BRANDS_BY_CAT = {
+  'ثلاجة': [
+    'LG إل جي','Samsung سامسونج','Haier هاير','Hisense هايسنس',
+    'Whirlpool ويرلبول','Ariston أريستون','Beko بيكو','Bompani بومباني',
+    'Indesit انديست','Midea ميديا','Candy كاندي','Electrolux إلكترولكس',
+    'Sharp شارب','Toshiba توشيبا','Bosch بوش','General Electric جنرال إلكتريك',
+    'White Westinghouse وايت ويستنجهاوس','Frigidaire فريجيدير',
+  ],
+  'غسالة': [
+    'LG إل جي','Samsung سامسونج','Whirlpool ويرلبول','Haier هاير',
+    'Ariston أريستون','Beko بيكو','Bompani بومباني','Indesit انديست',
+    'Midea ميديا','Candy كاندي','Electrolux إلكترولكس','Bosch بوش',
+    'Hisense هايسنس','Toshiba توشيبا','Sharp شارب',
+  ],
+  'مكيف': [
+    'Gree جري','Carrier كارير','York يورك','Daikin دايكن',
+    'Midea ميديا','LG إل جي','Samsung سامسونج','Haier هاير',
+    'General جنرال','O-General أو جنرال','Toshiba توشيبا',
+    'Hitachi هيتاشي','Panasonic باناسونيك','Fujitsu فوجيتسو',
+    'Sharp شارب','Electrolux إلكترولكس','Whirlpool ويرلبول',
+  ],
+  'شاشة تلفزيون': [
+    'Samsung سامسونج','LG إل جي','Sony سوني','TCL تي سي ال',
+    'Hisense هايسنس','Sharp شارب','Toshiba توشيبا','Panasonic باناسونيك',
+    'Philips فيليبس','Xiaomi شاومي','Huawei هواوي','Haier هاير',
+    'JVC جي في سي','Nikai نيكاي',
+  ],
+  'بوتجاز / فرن': [
+    'Bompani بومباني','Glem Gas جليم غاز','Ariston أريستون',
+    'Samsung سامسونج','LG إل جي','Bosch بوش','Electrolux إلكترولكس',
+    'Westpoint ويستبوينت','White Point وايت بوينت','Hisense هايسنس',
+    'Midea ميديا','Haier هاير','General Supreme جنرال سوبريم',
+  ],
+  'جوال / تابلت': [
+    'Samsung سامسونج','Apple أبل','Huawei هواوي','Xiaomi شاومي',
+    'OPPO أوبو','Vivo فيفو','OnePlus ون بلس','Realme ريلمي',
+    'Nokia نوكيا','Honor هونر','Infinix انفينيكس','Tecno تيكنو',
+    'Google Pixel جوجل بيكسل','Sony سوني',
+  ],
+  'حاسوب / لاب توب': [
+    'HP اتش بي','Dell ديل','Apple أبل','Lenovo لينوفو',
+    'Asus اسوس','Acer ايسر','Microsoft مايكروسوفت','Samsung سامسونج',
+    'Huawei هواوي','LG إل جي','MSI ام اس اي','Toshiba توشيبا',
+  ],
+  'سيارة': [
+    'Toyota تويوتا','Lexus لكزس','Hyundai هيونداي','Kia كيا',
+    'Nissan نيسان','Infiniti انفينيتي','Honda هوندا','Acura أكيورا',
+    'Ford فورد','Lincoln لينكولن','Chevrolet شيفروليه','GMC جي ام سي',
+    'Cadillac كاديلاك','Jeep جيب','Dodge دودج','Ram رام',
+    'Mercedes-Benz مرسيدس بنز','BMW بي ام دبليو','Audi أودي',
+    'Volkswagen فولكس واجن','Porsche بورش','Land Rover لاند روفر',
+    'Jaguar جاكوار','Volvo فولفو','Mitsubishi ميتسوبيشي',
+    'Suzuki سوزوكي','Mazda مازدا','Subaru سوبارو',
+    'BYD بي واي دي','Chery شيري','MG ام جي','Haval هافال',
+    'Geely جيلي','Changan شانغان',
+  ],
+  'أخرى': [
+    'LG إل جي','Samsung سامسونج','Philips فيليبس','Panasonic باناسونيك',
+    'Bosch بوش','Sony سوني','Sharp شارب',
+  ]
+};
+
+const CAR_AGENTS = {
+  'Toyota تويوتا':           {n:'شركة عبداللطيف جميل للسيارات',   p:'9200-00131', m:'9200-00131', h:'الاحد - الخميس | 7:30 ص - 5:00 م', e:'info@alj.com',         w:'alj.com',         a:'جدة + الرياض + الدمام', lat:21.5254, lng:39.1694, ml:'https://alj.com/ar/toyota/'},
+  'Lexus لكزس':              {n:'شركة عبداللطيف جميل للسيارات',   p:'9200-00131', m:'9200-00131', h:'الاحد - الخميس | 7:30 ص - 5:00 م', e:'info@alj.com',         w:'alj.com',         a:'جدة + الرياض + الدمام', lat:21.5254, lng:39.1694, ml:'https://alj.com/ar/lexus/'},
+  'Hyundai هيونداي':         {n:'شركة الجميح للسيارات',           p:'8001247777', m:'8001247777', h:'الاحد - الخميس | 8:00 ص - 5:00 م', e:'via hyundai-ksa.com',  w:'hyundai-ksa.com', a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'Kia كيا':                 {n:'شركة الجميح للسيارات',           p:'8001247777', m:'8001247777', h:'الاحد - الخميس | 8:00 ص - 5:00 م', e:'via ksa.kia.com',      w:'ksa.kia.com',     a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'Nissan نيسان':            {n:'شركة الجميح لنيسان',             p:'8001243333', m:'8001243333', h:'الاحد - الخميس | 8:00 ص - 5:00 م', e:'via nissan-saudi.com', w:'nissan-saudi.com', a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'Infiniti انفينيتي':       {n:'شركة الجميح لنيسان',             p:'8001243333', m:'8001243333', h:'الاحد - الخميس | 8:00 ص - 5:00 م', e:'via infiniti.com',     w:'infiniti.com',    a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'Honda هوندا':             {n:'شركة الحارثي للسيارات',          p:'8001249999', m:'8001249999', h:'الاحد - الخميس | 8:00 ص - 5:00 م', e:'via honda-ksa.com',   w:'honda-ksa.com',   a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'Ford فورد':               {n:'الشركة السعودية لتوزيع السيارات', p:'8001241111', m:'8001241111', h:'الاحد - الخميس | 8:00 ص - 5:00 م', e:'via ford.com.sa',     w:'ford.com.sa',     a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'Chevrolet شيفروليه':      {n:'شركة حسن جميل للسيارات',        p:'8001240000', m:'8001240000', h:'الاحد - الخميس | 8:00 ص - 5:00 م', e:'via chevrolet.com.sa', w:'chevrolet.com.sa', a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'GMC جي ام سي':            {n:'شركة حسن جميل للسيارات',        p:'8001240000', m:'8001240000', h:'الاحد - الخميس | 8:00 ص - 5:00 م', e:'via gmc.com.sa',      w:'gmc.com.sa',      a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'Mercedes-Benz مرسيدس بنز':{n:'شركة العثيم موتورز',            p:'8001248888', m:'8001248888', h:'الاحد - الخميس | 8:00 ص - 6:00 م', e:'via mercedes-benz.sa', w:'mercedes-benz.sa', a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'BMW بي ام دبليو':         {n:'شركة بواردي للسيارات',           p:'8001246666', m:'8001246666', h:'الاحد - الخميس | 8:00 ص - 6:00 م', e:'via bmw.sa',          w:'bmw.sa',          a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'Mitsubishi ميتسوبيشي':   {n:'شركة مصلح ووليد الشريف',        p:'8001242222', m:'8001242222', h:'الاحد - الخميس | 8:00 ص - 5:00 م', e:'via mitsubishi-ksa.com',w:'mitsubishi-ksa.com',a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'Land Rover لاند روفر':    {n:'شركة التوكيلات العالمية',        p:'8001245555', m:'8001245555', h:'الاحد - الخميس | 8:00 ص - 6:00 م', e:'via landrover-ksa.com',w:'landrover-ksa.com',a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'MG ام جي':                {n:'شركة صالح العيد للسيارات',       p:'920020282',  m:'920020282',  h:'الاحد - الخميس | 8:00 ص - 5:00 م', e:'via mg-saudi.com',    w:'mg-saudi.com',    a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+  'BYD بي واي دي':           {n:'شركة الحسن للسيارات',            p:'920033322',  m:'920033322',  h:'الاحد - الخميس | 8:00 ص - 5:00 م', e:'via byd-sa.com',      w:'byd-sa.com',      a:'جدة + الرياض + الدمام', lat:24.7136, lng:46.6753, ml:''},
+};
+
+const MAINT_CENTERS = {
+  "الرياض":"شارع العليا الرئيسي  -  مركز شاكر للصيانة","جدة":"شارع التحلية  -  مجموعة شاكر",
+  "الدمام":"شارع الملك فهد  -  مركز الصيانة المعتمد","مكة المكرمة":"شارع إبراهيم الخليل  -  مركز الخدمة",
+  "المدينة المنورة":"شارع أبي ذر  -  مركز الصيانة","الطائف":"طريق الملك فيصل  -  مركز معتمد",
+  "تبوك":"شارع الأمير فهد  -  مركز الصيانة","أبها":"شارع الملك فهد  -  مركز الخدمة",
+  "خميس مشيط":"طريق الدفاع  -  مركز معتمد","بريدة":"شارع الأمير عبدالعزيز  -  مركز الصيانة",
+  "حائل":"شارع الملك عبدالعزيز  -  مركز معتمد","جازان":"شارع الملك فهد  -  مركز الصيانة",
+  "نجران":"شارع الأمير سلطان  -  مركز معتمد","الجبيل":"طريق الملك فهد  -  مركز الصيانة",
+  "ينبع":"شارع الملك فيصل  -  مركز معتمد","الأحساء":"شارع الملك عبدالعزيز  -  مركز الصيانة",
+};
+
+</script>
 
 <!-- ============ Firebase module (admin: email/password) ============ -->
 <script type="module">
@@ -396,7 +593,9 @@
     dashboard: ['لوحة المعلومات', 'نظرة عامة على تطبيقك'],
     ads: ['الإعلانات', 'تتحكم في شريط الإعلانات بالتطبيق'],
     contact: ['رقم التواصل', 'رقم واتساب الظاهر للمستخدمين'],
-    suggestions: ['الاقتراحات', 'مراجعة اقتراحات المستخدمين']
+    suggestions: ['الاقتراحات', 'مراجعة اقتراحات المستخدمين'],
+    brands: ['الماركات والوكلاء', 'إضافة وتعديل الماركات وبيانات وكلائها'],
+    maint: ['مراكز الصيانة', 'عناوين مراكز الصيانة حسب المدينة']
   };
   document.querySelectorAll('.nav-item[data-page]').forEach(function (n) {
     n.addEventListener('click', function () {
@@ -411,6 +610,8 @@
       if (page === 'ads') loadAds();
       if (page === 'contact') loadContact();
       if (page === 'suggestions') loadSuggestions();
+      if (page === 'brands') loadBrands();
+      if (page === 'maint') loadMaint();
     });
   });
 
@@ -546,15 +747,21 @@
     box.innerHTML = list.map(function (s) {
       let date = '';
       try { date = s.at ? new Date(s.at).toLocaleDateString('ar-SA') : ''; } catch (e) {}
+      const approveBtn = (s.type === 'brand')
+        ? '<button class="btn btn-green btn-sm" data-approve-id="' + esc(s.id) + '" data-approve-val="' + esc(s.value || '') + '"><i class="ti ti-check"></i> اعتماد</button>'
+        : '';
       return '<div class="list-item">' +
         '<div class="li-icon" style="background:var(--amber3);color:var(--amber)"><i class="ti ti-bulb"></i></div>' +
         '<div class="li-body"><div class="li-title">' + esc(s.value || '') + '</div>' +
         '<div class="li-text"><span class="badge-soft amber">' + esc(typeLabel(s.type)) + '</span>' + (date ? ' · ' + esc(date) : '') + '</div></div>' +
-        '<div class="li-actions"><button class="btn btn-danger btn-sm" data-sugg="' + esc(s.id) + '"><i class="ti ti-trash"></i> تجاهل</button></div>' +
+        '<div class="li-actions">' + approveBtn + '<button class="btn btn-danger btn-sm" data-sugg="' + esc(s.id) + '"><i class="ti ti-trash"></i> تجاهل</button></div>' +
         '</div>';
     }).join('');
     box.querySelectorAll('[data-sugg]').forEach(function (b) {
       b.addEventListener('click', function () { dismissSugg(b.getAttribute('data-sugg')); });
+    });
+    box.querySelectorAll('[data-approve-id]').forEach(function (b) {
+      b.addEventListener('click', function () { approveBrandSuggestion(b.getAttribute('data-approve-id'), b.getAttribute('data-approve-val')); });
     });
   }
   async function dismissSugg(id) {
@@ -566,6 +773,213 @@
     } catch (e) { toast('تعذّر الحذف', 'err'); }
   }
   $('sugg-refresh').addEventListener('click', loadSuggestions);
+
+  /* ---------- Brands & Agents ---------- */
+  const CATEGORIES = ['ثلاجة', 'غسالة', 'مكيف', 'شاشة تلفزيون', 'بوتجاز / فرن', 'جوال / تابلت', 'حاسوب / لاب توب', 'سيارة', 'أخرى'];
+  let adminBrandsCache = {};
+  let adminMaintCache = {};
+  let editingBrandName = null;
+  let pendingApproveId = null;
+
+  function dflt(obj, name) { return (typeof obj !== 'undefined' && obj && obj[name]) ? obj[name] : null; }
+  function findDefaultCat(name) {
+    if (typeof BRANDS_BY_CAT === 'undefined') return '';
+    for (let i = 0; i < CATEGORIES.length; i++) { const c = CATEGORIES[i]; if (BRANDS_BY_CAT[c] && BRANDS_BY_CAT[c].indexOf(name) >= 0) return c; }
+    return '';
+  }
+  function ensureCatSelects() {
+    const f = $('brand-cat-filter'), bf = $('bf-cat');
+    if (f && !f.options.length) CATEGORIES.forEach(function (c) { const o = document.createElement('option'); o.value = c; o.textContent = c; f.appendChild(o); });
+    if (bf && !bf.options.length) CATEGORIES.forEach(function (c) { const o = document.createElement('option'); o.value = c; o.textContent = c; bf.appendChild(o); });
+  }
+
+  async function loadBrands() {
+    ensureCatSelects();
+    try { adminBrandsCache = await FB.getConfig('brands', {}) || {}; } catch (e) { adminBrandsCache = {}; }
+    if (typeof adminBrandsCache !== 'object' || adminBrandsCache === null) adminBrandsCache = {};
+    renderBrandsList();
+  }
+  function renderBrandsList() {
+    const cat = $('brand-cat-filter').value || CATEGORIES[0];
+    const box = $('brands-list');
+    const defaults = (typeof BRANDS_BY_CAT !== 'undefined' && BRANDS_BY_CAT[cat]) ? BRANDS_BY_CAT[cat].slice() : [];
+    const adminInCat = Object.keys(adminBrandsCache).filter(function (n) { return adminBrandsCache[n] && adminBrandsCache[n].cat === cat; });
+    const names = defaults.slice();
+    adminInCat.forEach(function (n) { if (names.indexOf(n) < 0) names.push(n); });
+    if (!names.length) { box.innerHTML = '<div class="empty"><i class="ti ti-tag"></i>لا توجد ماركات في هذه الفئة.</div>'; return; }
+    box.innerHTML = names.map(function (name) {
+      const isDefault = defaults.indexOf(name) >= 0;
+      const isAdmin = !!adminBrandsCache[name];
+      let badge = '<span class="badge-soft" style="background:var(--bg);color:var(--text2)">افتراضي</span>';
+      if (isAdmin && isDefault) badge = '<span class="badge-soft amber">معدّل</span>';
+      else if (isAdmin && !isDefault) badge = '<span class="badge-soft green">مُضاف</span>';
+      const ag = adminBrandsCache[name] || dflt(typeof AGENTS !== 'undefined' ? AGENTS : null, name) || dflt(typeof CAR_AGENTS !== 'undefined' ? CAR_AGENTS : null, name);
+      const agName = ag && ag.n ? ag.n : '—';
+      let actions = '<button class="btn btn-ghost btn-sm" data-bedit="' + esc(name) + '"><i class="ti ti-edit"></i> تعديل</button>';
+      if (isAdmin) actions += '<button class="btn btn-danger btn-sm" data-bdel="' + esc(name) + '"><i class="ti ti-trash"></i> ' + (isDefault ? 'إلغاء التعديل' : 'حذف') + '</button>';
+      return '<div class="list-item">' +
+        '<div class="li-icon"><i class="ti ti-tag"></i></div>' +
+        '<div class="li-body"><div class="li-title">' + esc(name) + ' ' + badge + '</div><div class="li-text">' + esc(agName) + '</div></div>' +
+        '<div class="li-actions">' + actions + '</div></div>';
+    }).join('');
+    box.querySelectorAll('[data-bedit]').forEach(function (b) { b.addEventListener('click', function () { startEditBrand(b.getAttribute('data-bedit')); }); });
+    box.querySelectorAll('[data-bdel]').forEach(function (b) { b.addEventListener('click', function () { deleteBrand(b.getAttribute('data-bdel')); }); });
+  }
+  function fillBrandForm(name, src, cat) {
+    $('bf-cat').value = cat || (src && src.cat) || findDefaultCat(name) || $('brand-cat-filter').value || CATEGORIES[0];
+    $('bf-name').value = name || '';
+    $('bf-n').value = (src && src.n) || '';
+    $('bf-brands').value = (src && src.brands) || '';
+    $('bf-p').value = (src && src.p) || '';
+    $('bf-m').value = (src && src.m) || '';
+    $('bf-h').value = (src && src.h) || '';
+    $('bf-e').value = (src && src.e) || '';
+    $('bf-w').value = (src && src.w) || '';
+    $('bf-a').value = (src && src.a) || '';
+    $('bf-ml').value = (src && src.ml) || '';
+    $('bf-lat').value = (src && (src.lat || src.lat === 0)) ? src.lat : '';
+    $('bf-lng').value = (src && (src.lng || src.lng === 0)) ? src.lng : '';
+  }
+  function startEditBrand(name) {
+    editingBrandName = name; pendingApproveId = null;
+    const src = adminBrandsCache[name] || dflt(typeof AGENTS !== 'undefined' ? AGENTS : null, name) || dflt(typeof CAR_AGENTS !== 'undefined' ? CAR_AGENTS : null, name) || {};
+    fillBrandForm(name, src, src.cat || findDefaultCat(name));
+    $('brand-form-title').textContent = 'تعديل: ' + name;
+    $('brand-form-panel').style.display = 'block';
+    $('brand-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function openNewBrand(prefillName, approveId) {
+    ensureCatSelects();
+    editingBrandName = null; pendingApproveId = approveId || null;
+    fillBrandForm(prefillName || '', {}, $('brand-cat-filter').value || CATEGORIES[0]);
+    $('brand-form-title').textContent = prefillName ? ('اعتماد ماركة: ' + prefillName) : 'إضافة ماركة جديدة';
+    $('brand-form-panel').style.display = 'block';
+    $('brand-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function hideBrandForm() { $('brand-form-panel').style.display = 'none'; editingBrandName = null; pendingApproveId = null; }
+
+  $('brand-cat-filter').addEventListener('change', renderBrandsList);
+  $('brand-add-new').addEventListener('click', function () { openNewBrand('', null); });
+  $('bf-cancel').addEventListener('click', hideBrandForm);
+  $('bf-save').addEventListener('click', async function () {
+    const cat = $('bf-cat').value;
+    const name = $('bf-name').value.trim();
+    const n = $('bf-n').value.trim();
+    if (!cat) { toast('اختر الفئة', 'err'); return; }
+    if (!name) { toast('اكتب اسم الماركة', 'err'); return; }
+    if (!n) { toast('اكتب اسم الوكيل', 'err'); return; }
+    const obj = {
+      cat: cat, n: n,
+      brands: $('bf-brands').value.trim(),
+      p: $('bf-p').value.trim(),
+      m: $('bf-m').value.trim(),
+      h: $('bf-h').value.trim(),
+      e: $('bf-e').value.trim(),
+      w: $('bf-w').value.trim(),
+      a: $('bf-a').value.trim(),
+      ml: $('bf-ml').value.trim()
+    };
+    const latv = parseFloat($('bf-lat').value); if (!isNaN(latv)) obj.lat = latv;
+    const lngv = parseFloat($('bf-lng').value); if (!isNaN(lngv)) obj.lng = lngv;
+    const next = Object.assign({}, adminBrandsCache);
+    if (editingBrandName && editingBrandName !== name) delete next[editingBrandName];
+    next[name] = obj;
+    const btn = $('bf-save'); btn.disabled = true;
+    try {
+      await FB.setConfig('brands', next);
+      adminBrandsCache = next;
+      if (pendingApproveId) { try { await FB.deleteSuggestion(pendingApproveId); } catch (e) {} pendingApproveId = null; }
+      toast('تم حفظ الماركة');
+      hideBrandForm();
+      $('brand-cat-filter').value = cat;
+      renderBrandsList();
+      loadDashboard();
+    } catch (e) {
+      toast('تعذّر الحفظ — تأكّد من صلاحية الأدمن والاتصال', 'err');
+    } finally { btn.disabled = false; }
+  });
+  async function deleteBrand(name) {
+    if (!confirm('حذف/إلغاء تعديل هذه الماركة؟')) return;
+    const next = Object.assign({}, adminBrandsCache); delete next[name];
+    try {
+      await FB.setConfig('brands', next);
+      adminBrandsCache = next;
+      toast('تم الحذف');
+      renderBrandsList(); loadDashboard();
+    } catch (e) { toast('تعذّر الحذف', 'err'); }
+  }
+
+  /* ---------- Maintenance centers ---------- */
+  async function loadMaint() {
+    const box = $('maint-list');
+    box.innerHTML = '<div class="empty"><i class="ti ti-loader spin"></i>جارٍ التحميل...</div>';
+    try { adminMaintCache = await FB.getConfig('maint_centers', {}) || {}; } catch (e) { adminMaintCache = {}; }
+    if (typeof adminMaintCache !== 'object' || adminMaintCache === null) adminMaintCache = {};
+    const defCities = (typeof MAINT_CENTERS !== 'undefined') ? Object.keys(MAINT_CENTERS) : [];
+    const cities = defCities.slice();
+    Object.keys(adminMaintCache).forEach(function (c) { if (cities.indexOf(c) < 0) cities.push(c); });
+    if (!cities.length) { box.innerHTML = '<div class="empty"><i class="ti ti-map-pin"></i>لا توجد مدن.</div>'; return; }
+    box.innerHTML = cities.map(function (city) {
+      const isDefault = defCities.indexOf(city) >= 0;
+      const isAdmin = !!adminMaintCache[city];
+      let badge = '<span class="badge-soft" style="background:var(--bg);color:var(--text2)">افتراضي</span>';
+      if (isAdmin && isDefault) badge = '<span class="badge-soft amber">معدّل</span>';
+      else if (isAdmin && !isDefault) badge = '<span class="badge-soft green">مُضاف</span>';
+      const addr = adminMaintCache[city] || ((typeof MAINT_CENTERS !== 'undefined' && MAINT_CENTERS[city]) ? MAINT_CENTERS[city] : '');
+      let actions = '<button class="btn btn-ghost btn-sm" data-medit="' + esc(city) + '"><i class="ti ti-edit"></i> تعديل</button>';
+      if (isAdmin) actions += '<button class="btn btn-danger btn-sm" data-mdel="' + esc(city) + '"><i class="ti ti-trash"></i> ' + (isDefault ? 'إلغاء' : 'حذف') + '</button>';
+      return '<div class="list-item">' +
+        '<div class="li-icon"><i class="ti ti-map-pin"></i></div>' +
+        '<div class="li-body"><div class="li-title">' + esc(city) + ' ' + badge + '</div><div class="li-text">' + esc(addr) + '</div></div>' +
+        '<div class="li-actions">' + actions + '</div></div>';
+    }).join('');
+    box.querySelectorAll('[data-medit]').forEach(function (b) { b.addEventListener('click', function () { editMaint(b.getAttribute('data-medit')); }); });
+    box.querySelectorAll('[data-mdel]').forEach(function (b) { b.addEventListener('click', function () { deleteMaint(b.getAttribute('data-mdel')); }); });
+  }
+  function editMaint(city) {
+    $('mf-city').value = city;
+    $('mf-addr').value = adminMaintCache[city] || ((typeof MAINT_CENTERS !== 'undefined' && MAINT_CENTERS[city]) ? MAINT_CENTERS[city] : '');
+    $('maint-form-title').textContent = 'تعديل: ' + city;
+    $('maint-form-panel').style.display = 'block';
+    $('maint-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('maint-add-new').addEventListener('click', function () {
+    $('mf-city').value = ''; $('mf-addr').value = '';
+    $('maint-form-title').textContent = 'إضافة مدينة';
+    $('maint-form-panel').style.display = 'block';
+    $('maint-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  $('mf-cancel').addEventListener('click', function () { $('maint-form-panel').style.display = 'none'; });
+  $('mf-save').addEventListener('click', async function () {
+    const city = $('mf-city').value.trim();
+    const addr = $('mf-addr').value.trim();
+    if (!city) { toast('اكتب اسم المدينة', 'err'); return; }
+    if (!addr) { toast('اكتب العنوان', 'err'); return; }
+    const next = Object.assign({}, adminMaintCache); next[city] = addr;
+    const btn = $('mf-save'); btn.disabled = true;
+    try {
+      await FB.setConfig('maint_centers', next);
+      adminMaintCache = next;
+      toast('تم حفظ المدينة');
+      $('maint-form-panel').style.display = 'none';
+      loadMaint();
+    } catch (e) { toast('تعذّر الحفظ — تأكّد من صلاحية الأدمن', 'err'); }
+    finally { btn.disabled = false; }
+  });
+  async function deleteMaint(city) {
+    if (!confirm('حذف/إلغاء هذه المدينة؟')) return;
+    const next = Object.assign({}, adminMaintCache); delete next[city];
+    try { await FB.setConfig('maint_centers', next); adminMaintCache = next; toast('تم الحذف'); loadMaint(); }
+    catch (e) { toast('تعذّر الحذف', 'err'); }
+  }
+
+  /* ---------- Approve a brand suggestion ---------- */
+  async function approveBrandSuggestion(id, val) {
+    const nav = document.querySelector('.nav-item[data-page="brands"]');
+    if (nav) nav.click();
+    await loadBrands();
+    openNewBrand(val || '', id);
+  }
 
 })();
 </script>
