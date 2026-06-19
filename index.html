@@ -993,6 +993,20 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--
         <div id="storage-status" style="font-size:10px;opacity:.7;margin-top:8px">التخزين: محلي على الجهاز</div>
       </div>
 
+      <!-- Account (Google sign-in) -->
+      <div id="account-box" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-top:12px">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+          <i class="ti ti-user-circle" style="font-size:20px;color:var(--blue2)"></i>
+          <div style="min-width:0">
+            <div style="font-size:11px;color:var(--text3)">مسجّل الدخول</div>
+            <div id="account-email" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+          </div>
+        </div>
+        <button id="account-signout" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;color:var(--red2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
+          <i class="ti ti-logout"></i> تسجيل الخروج
+        </button>
+      </div>
+
     </div><!-- end sc-contact -->
 
   </div><!-- app-wrap -->
@@ -1049,11 +1063,10 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--
 /* ============================================================
    ضمانكم — مُحوِّل Firebase (الخلفية السحابية)
    ------------------------------------------------------------
-   يُنفّذ نفس واجهة Store المستخدمة في التطبيق، لكن فوق Firebase:
-   • المصادقة: تسجيل دخول مجهول تلقائي (بدون شاشة دخول للمستخدم).
+   • المصادقة: تسجيل دخول بحساب Google (شاشة دخول للمستخدم) —
+     يمنح هوية ثابتة فتتزامن الضمانات على كل أجهزة المستخدم.
    • البيانات: Firestore (الخطة المجانية Spark — بدون بطاقة).
-   • الصور: تُضغط وتُخزَّن في مستندات منفصلة داخل Firestore
-     (لتفادي الحاجة لخدمة التخزين المدفوعة Storage/Blaze).
+   • الصور: تُضغط وتُخزَّن في مستندات منفصلة داخل Firestore.
    عند الجاهزية يُسنِد كائن الخلفية إلى window.__DAMANKOM_CLOUD__
    فيلتقطه موجّه Store في التطبيق ويستخدم السحابة تلقائياً.
    ============================================================ */
@@ -1062,44 +1075,114 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--
   function placeholder(c) { return !c || !c.apiKey || /PASTE|YOUR_|XXXX|أدخل/.test(c.apiKey); }
   if (placeholder(cfg)) { window.__DAMANKOM_CLOUD__ = false; return; }
 
+  /* ---------- بوّابة الدخول (تغطّي التطبيق حتى يسجّل المستخدم دخوله) ---------- */
+  function ensureSpin() {
+    if (document.getElementById('auth-gate-style')) return;
+    const s = document.createElement('style'); s.id = 'auth-gate-style';
+    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+  function gateEl() {
+    let g = document.getElementById('auth-gate');
+    if (!g) {
+      ensureSpin();
+      g = document.createElement('div');
+      g.id = 'auth-gate';
+      g.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:inherit;direction:rtl');
+      (document.body || document.documentElement).appendChild(g);
+    }
+    return g;
+  }
+  function showLoading() {
+    gateEl().innerHTML =
+      '<div style="color:#1A3A5C">' +
+      '<i class="ti ti-shield-check" style="font-size:46px;color:#2A6BBF"></i>' +
+      '<div style="font-size:20px;font-weight:800;margin-top:10px">ضمانكم</div>' +
+      '<div style="margin-top:18px;color:#6B7C93;font-size:14px"><i class="ti ti-loader" style="display:inline-block;animation:spin 1s linear infinite"></i> جارٍ التحميل…</div>' +
+      '</div>';
+  }
+  function removeGate() { const g = document.getElementById('auth-gate'); if (g) g.parentNode.removeChild(g); }
+  function showSignIn(onSignIn) {
+    gateEl().innerHTML =
+      '<div style="max-width:360px;width:100%">' +
+      '<i class="ti ti-shield-check" style="font-size:52px;color:#2A6BBF"></i>' +
+      '<div style="font-size:23px;font-weight:800;color:#1A3A5C;margin-top:10px">ضمانكم</div>' +
+      '<div style="color:#5A6B82;margin-top:14px;line-height:1.8;font-size:15px">سجّل دخولك بحساب Google لحفظ ضماناتك ومزامنتها على جميع أجهزتك بأمان.</div>' +
+      '<button id="auth-google-btn" style="margin-top:22px;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1A3A5C;border:1.5px solid #D7DEE8;border-radius:12px;padding:13px 16px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">' +
+      '<i class="ti ti-brand-google" style="font-size:20px;color:#2A6BBF"></i> تسجيل الدخول بحساب Google</button>' +
+      '<div id="auth-err" style="color:#C0392B;margin-top:12px;font-size:14px;min-height:18px"></div>' +
+      '<div style="color:#9AA7B8;margin-top:16px;font-size:12px;line-height:1.6">بياناتك خاصة بك — لا يراها أحد غيرك.</div>' +
+      '</div>';
+    const btn = document.getElementById('auth-google-btn');
+    if (btn) btn.onclick = onSignIn;
+  }
+
+  showLoading(); // غطِّ التطبيق فوراً ريثما نتحقّق من حالة الدخول
+
   const V = "12.15.0";
+  let auth = null;
   try {
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/" + V + "/firebase-app.js");
-    const { getAuth, signInAnonymously, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/" + V + "/firebase-auth.js");
+    const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } =
+      await import("https://www.gstatic.com/firebasejs/" + V + "/firebase-auth.js");
     const { getFirestore, collection, doc, getDoc, getDocs, setDoc, deleteDoc, addDoc } =
       await import("https://www.gstatic.com/firebasejs/" + V + "/firebase-firestore.js");
 
     const app = initializeApp(cfg);
-    const auth = getAuth(app);
+    auth = getAuth(app);
     const db = getFirestore(app);
 
-    // انتظر هوية المستخدم المجهول
-    const uid = await new Promise(function (res, rej) {
-      const to = setTimeout(function () { rej(new Error('auth-timeout')); }, 12000);
-      onAuthStateChanged(auth, function (u) { if (u) { clearTimeout(to); res(u.uid); } });
-      signInAnonymously(auth).catch(rej);
+    // دالة تسجيل الدخول بنافذة Google
+    function doGoogleSignIn() {
+      const btn = document.getElementById('auth-google-btn');
+      const errEl = document.getElementById('auth-err');
+      if (btn) btn.disabled = true; if (errEl) errEl.textContent = '';
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider).then(function () {
+        // نجح الدخول — أعد تحميل الصفحة لتهيئة نظيفة (الجلسة محفوظة)
+        location.reload();
+      }).catch(function (e) {
+        if (btn) btn.disabled = false;
+        const code = (e && e.code) || '';
+        if (errEl) {
+          if (code === 'auth/popup-blocked') errEl.textContent = 'المتصفح منع النافذة المنبثقة — اسمح بها وحاول مجدداً.';
+          else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') errEl.textContent = 'أُغلقت نافذة الدخول قبل إكمالها — حاول مجدداً.';
+          else if (code === 'auth/unauthorized-domain') errEl.textContent = 'النطاق غير مصرّح به في إعدادات Firebase.';
+          else if (code === 'auth/network-request-failed') errEl.textContent = 'تعذّر الاتصال بالشبكة — تحقّق من الإنترنت وحاول مجدداً.';
+          else errEl.textContent = 'تعذّر تسجيل الدخول — حاول مجدداً.';
+        }
+      });
+    }
+
+    // انتظر حالة الدخول الأولية (تُستعاد الجلسة المحفوظة إن وُجدت)
+    const user = await new Promise(function (res) {
+      let done = false;
+      const unsub = onAuthStateChanged(auth, function (u) { if (done) return; done = true; try { unsub(); } catch (e) {} res(u); });
+      setTimeout(function () { if (!done) { done = true; res(null); } }, 12000);
     });
 
+    if (!user) {
+      // غير مسجّل — اعرض شاشة الدخول وابقِ التطبيق خلف البوّابة
+      window.__DAMANKOM_CLOUD__ = false;
+      showSignIn(doGoogleSignIn);
+      return;
+    }
+
+    // ===== مسجّل الدخول — جهّز الخلفية السحابية بهوية المستخدم =====
+    const uid = user.uid;
     const wDoc = function (id) { return doc(db, 'users', uid, 'warranties', String(id)); };
     const pDoc = function (pid) { return doc(db, 'users', uid, 'photos', String(pid)); };
 
-    // حفظ صور المستند في مستندات منفصلة، واستبدال القيمة بعلامة مرجعية
     async function stashPhotos(w) {
       const slots = ['inv', 'card'];
       for (const s of slots) {
         const k = 'photo_' + s, v = w[k];
-        if (v && typeof v === 'string' && v.indexOf('data:') === 0) {
-          await setDoc(pDoc(w.id + '__' + s), { data: v });
-          w[k] = '__stored__';
-        }
+        if (v && typeof v === 'string' && v.indexOf('data:') === 0) { await setDoc(pDoc(w.id + '__' + s), { data: v }); w[k] = '__stored__'; }
       }
       if (w.maintenance) {
         for (const s of ['photo_maint', 'photo_hull']) {
           const v = w.maintenance[s];
-          if (v && typeof v === 'string' && v.indexOf('data:') === 0) {
-            await setDoc(pDoc(w.id + '__m_' + s), { data: v });
-            w.maintenance[s] = '__stored__';
-          }
+          if (v && typeof v === 'string' && v.indexOf('data:') === 0) { await setDoc(pDoc(w.id + '__m_' + s), { data: v }); w.maintenance[s] = '__stored__'; }
         }
       }
     }
@@ -1148,11 +1231,20 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--
       }
     };
 
+    // معلومات المستخدم + تسجيل الخروج (للتطبيق)
+    window.__DAMANKOM_USER__ = { name: user.displayName || '', email: user.email || '', photo: user.photoURL || '' };
+    window.__DAMANKOM_SIGNOUT__ = function () {
+      try { signOut(auth).then(function () { location.reload(); }).catch(function () { location.reload(); }); }
+      catch (e) { location.reload(); }
+    };
     window.__DAMANKOM_CLOUD__ = backend;
-    try { console.info('ضمانكم: تم الاتصال بـ Firebase (سحابي) ✓'); } catch (e) {}
+    removeGate();
+    try { console.info('ضمانكم: تم الاتصال بـ Firebase (سحابي) — مسجّل الدخول ✓'); } catch (e) {}
   } catch (err) {
-    try { console.error('ضمانكم: تعذّر الاتصال بـ Firebase، سيعمل محلياً. التفاصيل:', err); } catch (e) {}
-    window.__DAMANKOM_CLOUD__ = false; // رجوع آمن للتخزين المحلي
+    try { console.error('ضمانكم: تعذّر تهيئة Firebase. التفاصيل:', err); } catch (e) {}
+    // فشل التحميل/التهيئة — ارجع للتخزين المحلي وأزِل البوّابة حتى لا يعلَق المستخدم
+    window.__DAMANKOM_CLOUD__ = false;
+    removeGate();
   }
 })();
 </script>
@@ -2175,6 +2267,15 @@ const MAINT_CENTERS = {
     Store.ready().then(function () {
       const el = $('storage-status'); const cloud = Store.isCloud();
       if (el) { el.textContent = cloud ? 'التخزين: سحابي (Firebase) ✓' : 'التخزين: محلي على الجهاز'; el.style.color = cloud ? 'var(--green2)' : 'var(--text3)'; }
+      // صندوق الحساب (دخول Google) — يظهر بريد المستخدم وزر الخروج
+      const u = window.__DAMANKOM_USER__;
+      const box = $('account-box');
+      if (cloud && u && box) {
+        const em = $('account-email'); if (em) em.textContent = u.email || u.name || 'مستخدم Google';
+        box.style.display = 'block';
+        const so = $('account-signout');
+        if (so && window.__DAMANKOM_SIGNOUT__) so.onclick = function () { window.__DAMANKOM_SIGNOUT__(); };
+      }
       if (cloud) { renderWarranties(); renderAlerts(); fillMaintDropdown(); fillExportDropdown(); } // أعد العرض ببيانات السحابة
     });
   }
