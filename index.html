@@ -172,6 +172,7 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--
 .notif.warn{background:var(--amber3);border:1px solid var(--amber4);color:var(--amber)}
 .notif.info{background:var(--blue3);border:1px solid #85B7EB;color:var(--blue4)}
 .notif.green{background:var(--green3);border:1px solid var(--green4);color:var(--green)}
+.notif.exp{background:var(--red3);border:1px solid var(--red4);color:var(--red)}
 .notif i{flex-shrink:0;margin-top:1px;font-size:17px}
 /* Law info cards */
 .law-card{border-radius:var(--radius-sm);padding:11px;margin:7px 0}
@@ -1046,7 +1047,10 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--
       <button onclick="closeWModal()" style="background:var(--bg);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;color:var(--text2)">×</button>
     </div>
     <div id="wmodal-body" style="padding:14px 16px"></div>
-    <div style="padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+    <div style="padding:10px 16px 0">
+      <button onclick="openCalReminder()" style="width:100%;padding:11px;background:var(--green3);color:var(--green);border:1px solid var(--green4);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px"><i class="ti ti-calendar-plus"></i> أضِف تذكيراً بالتقويم قبل الانتهاء</button>
+    </div>
+    <div style="padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
       <button onclick="editWarranty()" style="padding:11px;background:var(--blue3);color:var(--blue4);border:1px solid #85B7EB;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-edit"></i>تعديل</button>
       <button onclick="printCurrentWarranty()" style="padding:11px;background:var(--card2);color:var(--text);border:1px solid var(--border2);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-printer"></i>طباعة</button>
       <button onclick="deleteCurrentWarranty()" style="padding:11px;background:var(--red3);color:var(--red);border:1px solid var(--red4);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-trash"></i>حذف</button>
@@ -1873,19 +1877,35 @@ const MAINT_CENTERS = {
   async function renderAlerts() {
     const box = $('dk-alerts'); if (!box) return;
     const list = await Store.listWarranties();
-    let html = '';
+    const expiring = []; const maint = [];
     list.forEach(function (w) {
       const days = daysUntil(w.expiry_date);
-      if (days == null) return;
-      if (days <= 90 && days >= 0) {
-        const cls = days <= 30 ? 'warn' : 'info';
-        html += '<div class="notif ' + cls + '"><i class="ti ti-alert-triangle"></i><div>ضمان <strong>' + esc(w.product_type) + ' ' + esc(w.brand) + '</strong> ينتهي خلال ' + days + ' يوماً — وثّق أي تأخير في الصيانة (م. 17).</div></div>';
-      } else if (days < 0) {
-        html += '<div class="notif warn"><i class="ti ti-clock"></i><div>ضمان <strong>' + esc(w.product_type) + ' ' + esc(w.brand) + '</strong> منتهٍ. تحقّق من حقك في ضمان إضافي (م. 19).</div></div>';
+      if (days != null && days <= 90) expiring.push({ w: w, days: days });
+      if (w.maintenance && w.maintenance.active) maint.push(w);
+    });
+    expiring.sort(function (a, b) { return a.days - b.days; }); // الأكثر إلحاحاً أولاً
+    let html = '';
+    if (expiring.length) {
+      const expd = expiring.filter(function (x) { return x.days < 0; }).length;
+      const soon = expiring.length - expd;
+      const parts = [];
+      if (expd) parts.push(expd + ' منتهٍ');
+      if (soon) parts.push(soon + ' قريب الانتهاء');
+      html += '<div style="font-size:12.5px;font-weight:700;color:var(--blue);margin:2px 0 9px;display:flex;align-items:center;gap:6px"><i class="ti ti-bell-ringing" style="color:var(--amber4)"></i>' + expiring.length + ' ضمان يحتاج انتباهك (' + parts.join(' · ') + ')</div>';
+    }
+    expiring.forEach(function (x) {
+      const w = x.w, days = x.days;
+      const remBtn = '<button onclick="remindById(\'' + esc(String(w.id)) + '\')" style="margin-top:8px;background:#fff;border:1px solid currentColor;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;color:inherit;opacity:.92"><i class="ti ti-calendar-plus"></i> ذكّرني بالتقويم</button>';
+      if (days < 0) {
+        html += '<div class="notif exp"><i class="ti ti-alert-octagon"></i><div>ضمان <strong>' + esc(w.product_type) + ' ' + esc(w.brand) + '</strong> منتهٍ منذ ' + Math.abs(days) + ' يوماً. تحقّق من حقك في ضمان إضافي (م. 19).</div></div>';
+      } else {
+        const cls = days <= 7 ? 'exp' : days <= 30 ? 'warn' : 'info';
+        const icon = days <= 7 ? 'ti-alert-octagon' : 'ti-alert-triangle';
+        html += '<div class="notif ' + cls + '"><i class="ti ' + icon + '"></i><div>ضمان <strong>' + esc(w.product_type) + ' ' + esc(w.brand) + '</strong> ينتهي خلال <strong>' + days + '</strong> يوماً.' + (days <= 30 ? ' وثّق أي تأخير في الصيانة (م. 17).' : '') + '<br>' + remBtn + '</div></div>';
       }
-      if (w.maintenance && w.maintenance.active) {
-        html += '<div class="notif info"><i class="ti ti-tool"></i><div><strong>' + esc(w.product_type) + ' ' + esc(w.brand) + '</strong> قيد الصيانة' + (w.maintenance.pickup ? ' — موعد الاستلام: ' + esc(w.maintenance.pickup) : '') + '.</div></div>';
-      }
+    });
+    maint.forEach(function (w) {
+      html += '<div class="notif info"><i class="ti ti-tool"></i><div><strong>' + esc(w.product_type) + ' ' + esc(w.brand) + '</strong> قيد الصيانة' + (w.maintenance.pickup ? ' — موعد الاستلام: ' + esc(w.maintenance.pickup) : '') + '.</div></div>';
     });
     if (!html) html = '<div class="notif green"><i class="ti ti-circle-check"></i><div>لا توجد تنبيهات حالياً — كل ضماناتك ضمن المدة الآمنة.</div></div>';
     box.innerHTML = html;
@@ -1895,9 +1915,11 @@ const MAINT_CENTERS = {
      10) DETAIL MODAL — view / edit / print / delete
      ======================================================== */
   let _wid = null;
+  let _wobj = null;
   async function openWarranty(id) {
     const w = await Store.getWarranty(id); if (!w) return;
     _wid = id;
+    _wobj = w;
     const days = daysUntil(w.expiry_date); const d = days == null ? 0 : days;
     const cls = d > 60 ? 'ok' : d > 14 ? 'warn' : 'exp';
     $('wmodal-title').textContent = (w.product_type || '') + ' — ' + (w.brand || '');
@@ -1929,6 +1951,103 @@ const MAINT_CENTERS = {
   window.openWarranty = openWarranty;
   function closeWModal() { const m = $('wmodal'); if (m) m.style.display = 'none'; _wid = null; }
   window.closeWModal = closeWModal;
+
+  /* ============ تذكير بالتقويم (يعمل والتطبيق مغلق، مجاناً، على كل الأجهزة) ============ */
+  let _calDays = 30;
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function icsDate(d) { return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()); }
+  function icsEsc(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
+  function calReminderDate(w, daysBefore) {
+    const exp = parseDate(w.expiry_date); if (!exp) return null;
+    let r = new Date(exp.getTime() - daysBefore * 86400000);
+    const t = todayMid();
+    if (r < t) r = new Date(t.getTime() + 86400000); // غداً إن كان الموعد قد فات
+    return r;
+  }
+  function calTitle(w) { return 'تذكير: ضمان ' + (w.product_type || '') + ' ' + (w.brand || '') + ' ينتهي قريباً'; }
+  function calDetails(w) { return 'ينتهي ضمان ' + (w.product_type || '') + ' ' + (w.brand || '') + ' بتاريخ ' + (w.expiry_date || '') + '. تحقّق من الصيانة أو التجديد قبل الانتهاء. — تطبيق ضمانكم'; }
+  function calGoogle(w, daysBefore) {
+    const r = calReminderDate(w, daysBefore); if (!r) return;
+    const start = icsDate(r), end = icsDate(new Date(r.getTime() + 86400000));
+    const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(calTitle(w)) + '&dates=' + start + '/' + end + '&details=' + encodeURIComponent(calDetails(w));
+    window.open(url, '_blank');
+  }
+  function calIcs(w, daysBefore) {
+    const r = calReminderDate(w, daysBefore); if (!r) return;
+    const start = icsDate(r), end = icsDate(new Date(r.getTime() + 86400000));
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Damankom//AR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+      'BEGIN:VEVENT', 'UID:damankom-' + (w.id || Date.now()) + '-' + daysBefore + '@damankom', 'DTSTAMP:' + stamp,
+      'DTSTART;VALUE=DATE:' + start, 'DTEND;VALUE=DATE:' + end,
+      'SUMMARY:' + icsEsc(calTitle(w)), 'DESCRIPTION:' + icsEsc(calDetails(w)),
+      'BEGIN:VALARM', 'TRIGGER:PT0S', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc(calTitle(w)), 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'تذكير-ضمان.ics';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); URL.revokeObjectURL(url); }, 1500);
+  }
+  function removeCalOverlay() { const o = $('cal-overlay'); if (o && o.parentNode) o.parentNode.removeChild(o); }
+  window.removeCalOverlay = removeCalOverlay;
+  function calNote(w) {
+    const r = calReminderDate(w, _calDays); const el = $('cal-date-note'); if (!r || !el) return;
+    const exp = parseDate(w.expiry_date);
+    const past = (new Date(exp.getTime() - _calDays * 86400000)) < todayMid();
+    el.innerHTML = past
+      ? 'الضمان قريب الانتهاء — سيُضاف التذكير ليوم غدٍ.'
+      : 'موعد التذكير: <strong>' + fmtAr(fmtISO(r)) + '</strong>';
+  }
+  function calChips(w) {
+    const wrap = $('cal-chips'); if (!wrap) return;
+    Array.prototype.forEach.call(wrap.querySelectorAll('[data-d]'), function (b) {
+      const on = (+b.getAttribute('data-d') === _calDays);
+      b.style.background = on ? 'var(--blue3)' : '#fff';
+      b.style.borderColor = on ? 'var(--blue2)' : 'var(--border2)';
+      b.style.color = on ? 'var(--blue4)' : 'var(--text2)';
+      b.style.fontWeight = on ? '700' : '500';
+    });
+    calNote(w);
+  }
+  function openCalReminder(w) {
+    w = w || _wobj; if (!w) return;
+    if (!w.expiry_date || daysUntil(w.expiry_date) == null) { toast('لا يوجد تاريخ انتهاء لهذا الضمان', 'err'); return; }
+    removeCalOverlay();
+    _calDays = 30;
+    const ov = document.createElement('div');
+    ov.id = 'cal-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9995;display:flex;align-items:flex-end;justify-content:center;direction:rtl';
+    const chip = 'flex:1;padding:9px 6px;border-radius:9px;font-size:12px;cursor:pointer;font-family:inherit;border:1px solid var(--border2);background:#fff;color:var(--text2)';
+    ov.innerHTML =
+      '<div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:430px;padding:18px 18px 26px;max-height:88vh;overflow-y:auto">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+      '<div style="font-size:15px;font-weight:700;color:var(--blue)"><i class="ti ti-calendar-plus"></i> تذكير بالتقويم</div>' +
+      '<button onclick="removeCalOverlay()" style="background:var(--bg);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;color:var(--text2)">×</button></div>' +
+      '<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:14px">نضيف تذكيراً في تقويمك قبل انتهاء ضمان <strong>' + esc(w.product_type || '') + ' ' + esc(w.brand || '') + '</strong> (ينتهي ' + esc(w.expiry_date || '') + '). يصلك التنبيه من تقويمك حتى لو كان التطبيق مغلقاً.</div>' +
+      '<div style="font-size:12px;font-weight:600;margin-bottom:7px">متى تريد التذكير؟</div>' +
+      '<div id="cal-chips" style="display:flex;gap:8px;margin-bottom:10px">' +
+      '<button data-d="7" style="' + chip + '">قبل ٧ أيام</button>' +
+      '<button data-d="30" style="' + chip + '">قبل ٣٠ يوماً</button>' +
+      '<button data-d="60" style="' + chip + '">قبل ٦٠ يوماً</button></div>' +
+      '<div id="cal-date-note" style="font-size:11.5px;color:var(--text3);margin-bottom:16px;min-height:16px"></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+      '<button id="cal-google" style="padding:11px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-brand-google"></i> Google تقويم</button>' +
+      '<button id="cal-ics" style="padding:11px;background:var(--card2);color:var(--text);border:1px solid var(--border2);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-download"></i> تقويم آيفون/ملف</button></div>' +
+      '<div style="font-size:11px;color:var(--text3);margin-top:12px;line-height:1.6">💡 «Google تقويم» لمستخدمي حساب Google · «تقويم آيفون/ملف» يفتح في تقويم آيفون وأغلب التطبيقات.</div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    ov.onclick = function (e) { if (e.target === ov) removeCalOverlay(); };
+    const chipsWrap = $('cal-chips');
+    Array.prototype.forEach.call(chipsWrap.querySelectorAll('[data-d]'), function (b) {
+      b.addEventListener('click', function () { _calDays = +b.getAttribute('data-d'); calChips(w); });
+    });
+    $('cal-google').addEventListener('click', function () { calGoogle(w, _calDays); toast('يُفتح تقويم Google لحفظ التذكير'); });
+    $('cal-ics').addEventListener('click', function () { calIcs(w, _calDays); toast('تم تنزيل ملف التذكير — افتحه لإضافته للتقويم'); });
+    calChips(w);
+  }
+  window.openCalReminder = openCalReminder;
+  async function remindById(id) { const w = await Store.getWarranty(id); if (w) openCalReminder(w); }
+  window.remindById = remindById;
 
   async function editWarranty() {
     if (_wid == null) return;
